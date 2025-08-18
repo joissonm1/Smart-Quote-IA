@@ -1,0 +1,134 @@
+:root {
+  --bg-light: #e0f2ff;
+  --card-light: #ffffff;
+  --text-light: #1f2937;
+  --accent-light: #3b82f6;
+
+  --bg-dark: #111827;
+  --card-dark: #1f2937;
+  --text-dark: #ffffff;
+  --accent-dark: #60a5fa;
+
+  --transition: 0.3s ease;
+  --radius: 12px;
+  --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+body {
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+  transition: background var(--transition), color var(--transition);
+}
+
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 2rem;
+}
+
+.card {
+  background: var(--card-light);
+  color: var(--text-light);
+  padding: 2rem;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  max-width: 500px;
+  width: 100%;
+  transition: background var(--transition), color var(--transition);
+}
+
+.card h1 {
+  margin-bottom: 1rem;
+  font-size: 1.8rem;
+}
+
+label {
+  display: block;
+  margin-bottom: 1rem;
+  font-weight: 500;
+}
+
+input,
+textarea {
+  width: 100%;
+  padding: 0.75rem;
+  margin-top: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: var(--radius);
+  font-size: 1rem;
+  transition: border var(--transition), box-shadow var(--transition);
+}
+
+input:focus,
+textarea:focus {
+  border-color: var(--accent-light);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+  outline: none;
+}
+
+button {
+  background: var(--accent-light);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius);
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background var(--transition), transform var(--transition);
+}
+
+button:hover {
+  background: #2563eb;
+  transform: scale(1.02);
+}
+
+.feedback {
+  margin-top: 1rem;
+  font-weight: 500;
+}
+
+.theme-toggle {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  font-size: 1.5rem;
+  cursor: pointer;
+  transition: transform var(--transition);
+}
+
+.theme-toggle:hover {
+  transform: rotate(20deg);
+}
+
+/* Tema escuro */
+body.dark {
+  background: var(--bg-dark);
+}
+
+body.dark .card {
+  background: var(--card-dark);
+  color: var(--text-dark);
+}
+
+body.dark input,
+body.dark textarea {
+  background: #111827;
+  color: white;
+  border: 1px solid #444;
+}
+
+body.dark input:focus,
+body.dark textarea:focus {
+  border-color: var(--accent-dark);
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.3);
+}
+
+body.dark button {
+  background: var(--accent-dark);
+}
+
+body.dark button:hover {
+  background: #3b82f6;
+}

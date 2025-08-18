@@ -2,7 +2,10 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import Imap from 'imap';
 import { simpleParser } from 'mailparser';
-import fetch from 'node-fetch';
+import * as fs from 'fs';
+import * as path from 'path';
+import pdf from 'pdf-parse';
+import Tesseract from 'tesseract.js';
 
 @Injectable()
 export class EmailService {
@@ -43,26 +46,37 @@ export class EmailService {
 
             const emails: any[] = [];
             const parsePromises: Promise<void>[] = [];
-            const fetch = imap.fetch(results, { bodies: '' });
+            const fetcher = imap.fetch(results, { bodies: '' });
 
-            fetch.on('message', (msg) => {
+            fetcher.on('message', (msg) => {
               msg.on('body', (stream) => {
                 const p = simpleParser(stream)
-                  .then((parsed) => {
-                    const emailJson = {
-                      from: parsed.from?.text,
-                      subject: parsed.subject,
-                      date: parsed.date,
-                      text: parsed.text,
-                      html: parsed.html,
-                      attachments: (parsed.attachments || []).map((a) => ({
-                        filename: a.filename,
-                        contentType: a.contentType,
-                        size: a.size,
-                      })),
+                  .then(async (parsed) => {
+                    const from = parsed.from?.value?.[0];
+                    const cliente = {
+                      nome: from?.name || 'Desconhecido',
+                      email: from?.address || '',
                     };
+
+                    const anexos = await Promise.all(
+                      (parsed.attachments || []).map(async (a) =>
+                        this.processAttachment(a)
+                      )
+                    );
+
+                    const emailJson = {
+                      cliente,
+                      assunto: parsed.subject || '',
+                      descricao: parsed.text || '',
+                      anexos,
+                      tipo: this.detectTipo(parsed.subject, parsed.text),
+                      valido: this.isValidEmail(parsed.subject, parsed.text),
+                      palavras_chave: this.extractKeywords(parsed.subject, parsed.text),
+                      prioridade: this.definePriority(parsed.subject, parsed.text),
+                    };
+
                     emails.push(emailJson);
-                    this.logger.log(`Email processado: ${emailJson.subject}`);
+                    this.logger.log(`Email estruturado: ${emailJson.assunto}`);
                   })
                   .catch((err) => {
                     this.logger.error('Erro ao processar email:', err.message);
@@ -72,10 +86,10 @@ export class EmailService {
               });
             });
 
-            fetch.once('end', () => {
+            fetcher.once('end', () => {
               Promise.all(parsePromises)
                 .then(() => {
-                  this.logger.log(`${emails.length} emails processados`);
+                  this.logger.log(`${emails.length} emails estruturados`);
                   imap.end();
                   resolve(emails);
                 })
@@ -98,9 +112,67 @@ export class EmailService {
     });
   }
 
-  @Cron('*/5 * * * * *')
+  private async processAttachment(attachment: any) {
+    const uploadDir = path.join(__dirname, '..', '..', 'uploads');
+    if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
+
+    const filePath = path.join(uploadDir, attachment.filename);
+    fs.writeFileSync(filePath, attachment.content);
+
+    let conteudo = '';
+
+    if (attachment.contentType === 'application/pdf') {
+      try {
+        const data = await pdf(attachment.content);
+        conteudo = data.text.trim();
+        if (!conteudo) {
+          this.logger.warn(`PDF sem texto (${attachment.filename}), tentando OCR...`);
+          conteudo = await this.ocrFile(filePath);
+        }
+      } catch {
+        conteudo = await this.ocrFile(filePath);
+      }
+    } else if (attachment.contentType.startsWith('image/')) {
+      conteudo = await this.ocrFile(filePath);
+    }
+
+    return {
+      nome: attachment.filename,
+      tipo: attachment.contentType,
+      tamanho: attachment.size,
+      url: `uploads/${attachment.filename}`,
+      conteudo,
+    };
+  }
+
+  private async ocrFile(filePath: string): Promise<string> {
+    try {
+      const result = await Tesseract.recognize(filePath, 'por');
+      return result.data.text.trim();
+    } catch (err) {
+      this.logger.error(`Erro no OCR: ${err.message}`);
+      return '';
+    }
+  }
+
+  private clearUploadsFolder() {
+    const uploadDir = path.join(__dirname, '..', '..', 'uploads');
+    if (fs.existsSync(uploadDir)) {
+      fs.readdirSync(uploadDir).forEach((file) => {
+        const filePath = path.join(uploadDir, file);
+        try {
+          fs.unlinkSync(filePath);
+          this.logger.log(`Arquivo removido: ${file}`);
+        } catch (err) {
+          this.logger.error(`Erro ao remover arquivo ${file}: ${err.message}`);
+        }
+      });
+    }
+  }
+
+  @Cron('*/10 * * * * *')
   async handleCron() {
-    console.log('\n--------------------------------------------------Email--------------------------------------------------');
+     console.log('\n--------------------------------------------------Email--------------------------------------------------');
     this.logger.log('Verificando emails...');
     try {
       const emails = await this.fetchUnreadEmails();
@@ -108,23 +180,46 @@ export class EmailService {
         this.logger.log(`${emails.length} emails recebidos`);
 
         for (const email of emails) {
-          this.logger.log(`De: ${email.from} | Assunto: ${email.subject}`);
-
-          try {
-            const response = await this.callGemini(`Analise este email:\nAssunto: ${email.subject}\nConteúdo: ${email.text}`);
-            this.logger.log(`Resposta da IA (Gemini): ${response}`);
-          } catch (err) {
-            this.logger.error('Erro ao chamar a IA:', err.message);
-          }
+          this.logger.log('=== EMAIL ANALISADO ===');
+          this.logger.log(JSON.stringify(email, null, 2));
         }
+        this.clearUploadsFolder();
       }
     } catch (error) {
       this.logger.error('Erro ao buscar emails:', error.message);
     }
   }
 
- private async callGemini(prompt: string): Promise<string> {
-  return `Resposta simulada para: "${prompt.substring(0, 200)}..."`;
+  private detectTipo(subject?: string, text?: string): string {
+    const content = `${subject} ${text}`.toLowerCase();
+    if (
+      content.includes('pc') ||
+      content.includes('computador') ||
+      content.includes('orçamento') ||
+      content.includes('preço')
+    ) {
+      return 'orcamento';
+    }
+    return 'outro';
+  }
+
+  private isValidEmail(subject?: string, text?: string): boolean {
+    if (!subject && !text) return false;
+    if ((subject?.length || 0) < 3 && (text?.length || 0) < 5) return false;
+    return true;
+  }
+
+  private extractKeywords(subject?: string, text?: string): string[] {
+    const content = `${subject} ${text}`.toLowerCase();
+    const keywords = ['pc', 'computador', 'disco', 'memória', 'formatação', 'assistência', 'orçamento'];
+    return keywords.filter((word) => content.includes(word));
+  }
+
+  private definePriority(subject?: string, text?: string): 'alta' | 'media' | 'baixa' {
+    const content = `${subject} ${text}`.toLowerCase();
+    if (content.includes('urgente') || content.includes('imediato')) return 'alta';
+    if (content.includes('orçamento') || content.includes('preço')) return 'media';
+    return 'baixa';
+  }
 }
 
-}
