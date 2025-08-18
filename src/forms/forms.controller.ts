@@ -1,6 +1,7 @@
-import { Body, Controller, Post, Get } from '@nestjs/common';
+import { Body, Controller, Post, Get, UsePipes } from '@nestjs/common';
 import { FormsService } from './forms.service';
 import { ApiBody, ApiResponse, ApiTags, ApiOperation } from '@nestjs/swagger';
+import { ValidateForm } from '../forms/validate-form';
 
 @ApiTags('forms')
 @Controller('forms')
@@ -8,6 +9,7 @@ export class FormsController {
   constructor(private readonly formsService: FormsService) {}
 
   @Post()
+  @UsePipes(new ValidateForm())
   @ApiOperation({ summary: 'Submeter um pedido de cotação' })
   @ApiResponse({ status: 201, description: 'Pedido criado com sucesso' })
   @ApiResponse({ status: 400, description: 'Dados inválidos' })
