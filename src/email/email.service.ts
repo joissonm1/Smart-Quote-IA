@@ -100,7 +100,7 @@ export class EmailService {
 
   @Cron('*/5 * * * * *')
   async handleCron() {
-    console.log('----------------------------------------------------------------------------------------');
+    console.log('\n--------------------------------------------------Email--------------------------------------------------');
     this.logger.log('Verificando emails...');
     try {
       const emails = await this.fetchUnreadEmails();

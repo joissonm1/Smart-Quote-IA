@@ -13,7 +13,9 @@ export class FormsService {
     description: string;
     attachments?: { fileName: string; fileUrl: string; fileType: string }[];
   }) {
+    console.log('\n--------------------------------------------------Forms--------------------------------------------------');
     this.logger.log(`Recebendo solicitação de ${data.requester}`);
+    console.log('\n---------------------------------------------------------------------------------------------------------');
 
     const newRequest = await this.prisma.quotationRequest.create({
       data: {
@@ -26,8 +28,10 @@ export class FormsService {
       },
       include: { attachments: true },
     });
-
+   console.log('\n--------------------------------------------------Forms--------------------------------------------------');
     this.logger.log(`Solicitação criada com ID: ${newRequest.id}`);
+    console.log(newRequest);
+    console.log('\n--------------------------------------------------------------------------------------------------------');
     return newRequest;
   }
 
