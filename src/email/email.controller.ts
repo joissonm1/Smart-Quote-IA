@@ -12,13 +12,13 @@
 //   async handleGmailWebhook(@Body() payload: any): Promise<{ success: boolean; data?: EmailAnalysisResult; error?: string }> {
 //     try {
 //       this.logger.log('Webhook recebido do Gmail');
-      
+
 //       const result = await this.emailService.processIncomingEmail(payload);
-      
+
 //       this.logger.log('Email processado:', result);
-      
+
 //       return { success: true, data: result };
-      
+
 //     } catch (error) {
 //       this.logger.error('Erro no webhook:', error);
 //       return { success: false, error: error.message };
@@ -30,15 +30,15 @@
 //   async testEmailAnalysis(@Body() testEmailData: any) {
 //     try {
 //       this.logger.log('🧪 Testando análise de email...');
-      
+
 //       const result = await this.emailService.processIncomingEmail(testEmailData);
-      
+
 //       return {
 //         success: true,
 //         message: 'Email analisado com sucesso!',
 //         data: result
 //       };
-      
+
 //     } catch (error) {
 //       this.logger.error('Erro no teste:', error);
 //       return {
@@ -48,13 +48,12 @@
 //     }
 //   }
 
-
 //   @Post('test-simple')
 //   @HttpCode(200)
 //   async testSimple(@Body() testEmailData: any) {
 //     try {
 //       this.logger.log('🔧 Teste simples - dados recebidos:', testEmailData);
-      
+
 //       const mockResult: EmailAnalysisResult = {
 //         cliente: {
 //           email: testEmailData.from || 'teste@email.com',
@@ -73,13 +72,13 @@
 //         anexos: [],
 //         prioridade: 'media'
 //       };
-      
+
 //       return {
 //         success: true,
 //         message: 'Teste simples executado com sucesso!',
 //         data: mockResult
 //       };
-      
+
 //     } catch (error) {
 //       this.logger.error('Erro no teste simples:', error);
 //       return {

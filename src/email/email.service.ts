@@ -60,19 +60,16 @@ export class EmailService {
 
                     const anexos = await Promise.all(
                       (parsed.attachments || []).map(async (a) =>
-                        this.processAttachment(a)
-                      )
+                        this.processAttachment(a),
+                      ),
                     );
 
                     const emailJson = {
                       cliente,
                       assunto: parsed.subject || '',
                       descricao: parsed.text || '',
+                      data: parsed.date ? parsed.date.toISOString() : '',
                       anexos,
-                      tipo: this.detectTipo(parsed.subject, parsed.text),
-                      valido: this.isValidEmail(parsed.subject, parsed.text),
-                      palavras_chave: this.extractKeywords(parsed.subject, parsed.text),
-                      prioridade: this.definePriority(parsed.subject, parsed.text),
                     };
 
                     emails.push(emailJson);
@@ -126,7 +123,9 @@ export class EmailService {
         const data = await pdf(attachment.content);
         conteudo = data.text.trim();
         if (!conteudo) {
-          this.logger.warn(`PDF sem texto (${attachment.filename}), tentando OCR...`);
+          this.logger.warn(
+            `PDF sem texto (${attachment.filename}), tentando OCR...`,
+          );
           conteudo = await this.ocrFile(filePath);
         }
       } catch {
@@ -134,6 +133,8 @@ export class EmailService {
       }
     } else if (attachment.contentType.startsWith('image/')) {
       conteudo = await this.ocrFile(filePath);
+    } else if (attachment.contentType === 'text/plain') {
+      conteudo = attachment.content.toString('utf-8').trim();
     }
 
     return {
@@ -170,9 +171,11 @@ export class EmailService {
     }
   }
 
-  @Cron('*/10 * * * * *')
+  @Cron('*/5 * * * * *')
   async handleCron() {
-     console.log('\n--------------------------------------------------Email--------------------------------------------------');
+    console.log(
+      '\n--------------------------------------------------Email--------------------------------------------------',
+    );
     this.logger.log('Verificando emails...');
     try {
       const emails = await this.fetchUnreadEmails();
@@ -180,8 +183,17 @@ export class EmailService {
         this.logger.log(`${emails.length} emails recebidos`);
 
         for (const email of emails) {
-          this.logger.log('=== EMAIL ANALISADO ===');
-          this.logger.log(JSON.stringify(email, null, 2));
+          const jsonFinal = {
+            assunto: email.assunto,
+            descricao: email.descricao,
+            nome: email.cliente.nome,
+            email: email.cliente.email,
+            data: email.data || '',
+            anexo_conteudo: email.anexos.map((a) => a.conteudo).join('\n\n'),
+          };
+
+          this.logger.log('=== EMAIL FINAL ===');
+          this.logger.log(JSON.stringify(jsonFinal, null, 2));
         }
         this.clearUploadsFolder();
       }
@@ -189,37 +201,4 @@ export class EmailService {
       this.logger.error('Erro ao buscar emails:', error.message);
     }
   }
-
-  private detectTipo(subject?: string, text?: string): string {
-    const content = `${subject} ${text}`.toLowerCase();
-    if (
-      content.includes('pc') ||
-      content.includes('computador') ||
-      content.includes('orçamento') ||
-      content.includes('preço')
-    ) {
-      return 'orcamento';
-    }
-    return 'outro';
-  }
-
-  private isValidEmail(subject?: string, text?: string): boolean {
-    if (!subject && !text) return false;
-    if ((subject?.length || 0) < 3 && (text?.length || 0) < 5) return false;
-    return true;
-  }
-
-  private extractKeywords(subject?: string, text?: string): string[] {
-    const content = `${subject} ${text}`.toLowerCase();
-    const keywords = ['pc', 'computador', 'disco', 'memória', 'formatação', 'assistência', 'orçamento'];
-    return keywords.filter((word) => content.includes(word));
-  }
-
-  private definePriority(subject?: string, text?: string): 'alta' | 'media' | 'baixa' {
-    const content = `${subject} ${text}`.toLowerCase();
-    if (content.includes('urgente') || content.includes('imediato')) return 'alta';
-    if (content.includes('orçamento') || content.includes('preço')) return 'media';
-    return 'baixa';
-  }
 }
-

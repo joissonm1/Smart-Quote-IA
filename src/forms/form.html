@@ -1,255 +1,263 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-br">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Solicitação de Orçamento | Sua Empresa</title>
-  <style>
-    :root {
-      --bg-light: #e0f2ff;
-      --card-light: #ffffff;
-      --text-light: #1f2937;
-      --accent-light: #3b82f6;
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Solicitação de Orçamento | Sua Empresa</title>
+    <style>
+      :root {
+        --bg-light: #e0f2ff;
+        --card-light: #ffffff;
+        --text-light: #1f2937;
+        --accent-light: #3b82f6;
 
-      --bg-dark: #0f172a;
-      --card-dark: #1e293b;
-      --text-dark: #f8fafc;
-      --accent-dark: #60a5fa;
+        --bg-dark: #0f172a;
+        --card-dark: #1e293b;
+        --text-dark: #f8fafc;
+        --accent-dark: #60a5fa;
 
-      --transition: 0.3s ease;
-      --radius: 10px;
-      --shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
-    }
+        --transition: 0.3s ease;
+        --radius: 10px;
+        --shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+      }
 
-    * {
-      box-sizing: border-box;
-    }
+      * {
+        box-sizing: border-box;
+      }
 
-    body {
-      margin: 0;
-      font-family: 'Segoe UI', 'Roboto', sans-serif;
-      background: var(--bg-light);
-      color: var(--text-light);
-      transition: background var(--transition), color var(--transition);
-    }
+      body {
+        margin: 0;
+        font-family: 'Segoe UI', 'Roboto', sans-serif;
+        background: var(--bg-light);
+        color: var(--text-light);
+        transition:
+          background var(--transition),
+          color var(--transition);
+      }
 
-    .theme-toggle {
-      position: fixed;
-      top: 1rem;
-      right: 1rem;
-      font-size: 1.5rem;
-      cursor: pointer;
-      user-select: none;
-      transition: transform var(--transition);
-    }
+      .theme-toggle {
+        position: fixed;
+        top: 1rem;
+        right: 1rem;
+        font-size: 1.5rem;
+        cursor: pointer;
+        user-select: none;
+        transition: transform var(--transition);
+      }
 
-    .theme-toggle:hover {
-      transform: rotate(20deg);
-    }
+      .theme-toggle:hover {
+        transform: rotate(20deg);
+      }
 
-    .container {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      padding: 2rem;
-    }
-
-    .card {
-      background: var(--card-light);
-      color: var(--text-light);
-      padding: 2.5rem;
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      max-width: 600px;
-      width: 100%;
-      transition: background var(--transition), color var(--transition);
-    }
-
-    .card h1 {
-      font-size: 2rem;
-      margin-bottom: 1.5rem;
-      text-align: center;
-    }
-
-    label {
-      display: block;
-      margin-bottom: 1.2rem;
-      font-weight: 600;
-    }
-
-    input,
-    textarea {
-      width: 100%;
-      padding: 0.75rem 1rem;
-      margin-top: 0.5rem;
-      border: 1px solid #ccc;
-      border-radius: var(--radius);
-      font-size: 1rem;
-      transition: border var(--transition), box-shadow var(--transition);
-    }
-
-    input:focus,
-    textarea:focus {
-      border-color: var(--accent-light);
-      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
-      outline: none;
-    }
-
-    button {
-      background: var(--accent-light);
-      color: white;
-      border: none;
-      padding: 0.75rem 1.5rem;
-      border-radius: var(--radius);
-      font-size: 1rem;
-      cursor: pointer;
-      transition: background var(--transition), transform var(--transition);
-      margin-top: 1rem;
-      width: 100%;
-    }
-
-    button:hover {
-      background: #2563eb;
-      transform: scale(1.02);
-    }
-
-    .feedback {
-      margin-top: 1rem;
-      font-weight: 500;
-      text-align: center;
-    }
-
-    /* Tema escuro */
-    body.dark {
-      background: var(--bg-dark);
-      color: var(--text-dark);
-    }
-
-    body.dark .card {
-      background: var(--card-dark);
-      color: var(--text-dark);
-    }
-
-    body.dark input,
-    body.dark textarea {
-      background: #0f172a;
-      color: white;
-      border: 1px solid #334155;
-    }
-
-    body.dark input:focus,
-    body.dark textarea:focus {
-      border-color: var(--accent-dark);
-      box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.3);
-    }
-
-    body.dark button {
-      background: var(--accent-dark);
-    }
-
-    body.dark button:hover {
-      background: #3b82f6;
-    }
-
-    @media (max-width: 600px) {
-      .card {
+      .container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
         padding: 2rem;
       }
 
+      .card {
+        background: var(--card-light);
+        color: var(--text-light);
+        padding: 2.5rem;
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        max-width: 600px;
+        width: 100%;
+        transition:
+          background var(--transition),
+          color var(--transition);
+      }
+
       .card h1 {
-        font-size: 1.6rem;
-      }
-    }
-  </style>
-</head>
-<body>
-  <div class="theme-toggle" id="themeToggle" title="Alternar tema">🌞</div>
-
-  <main class="container">
-    <form id="budgetForm" class="card" novalidate>
-      <h1>Solicitação de Orçamento</h1>
-
-      <label>
-        Nome*
-        <input type="text" name="nome" required />
-      </label>
-
-      <label>
-        Email*
-        <input type="email" name="email" required />
-      </label>
-
-      <label>
-        Descrição do Projeto*
-        <textarea name="descricao" rows="5" required></textarea>
-      </label>
-
-      <label>
-        Anexos (opcional)
-        <input type="file" name="anexos" multiple />
-      </label>
-
-      <button type="submit">Enviar Solicitação</button>
-      <p id="feedback" class="feedback"></p>
-    </form>
-  </main>
-
-  <script>
-    let isDark = false;
-
-    const themeToggle = document.getElementById("themeToggle");
-    const body = document.body;
-    const feedback = document.getElementById("feedback");
-    const form = document.getElementById("budgetForm");
-
-    function updateTheme() {
-      body.classList.toggle("dark", isDark);
-      themeToggle.textContent = isDark ? "🌙" : "🌞";
-    }
-
-    themeToggle.addEventListener("click", () => {
-      isDark = !isDark;
-      updateTheme();
-    });
-
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      if (!form.checkValidity()) {
-        feedback.textContent = "Por favor, preencha todos os campos obrigatórios.";
-        feedback.style.color = "red";
-        return;
+        font-size: 2rem;
+        margin-bottom: 1.5rem;
+        text-align: center;
       }
 
-      const formData = new FormData(form);
-      const data = {
-        nome: formData.get("nome"),
-        email: formData.get("email"),
-        descricao: formData.get("descricao"),
-        anexos: [...formData.getAll("anexos")].map(file => file.name)
-      };
+      label {
+        display: block;
+        margin-bottom: 1.2rem;
+        font-weight: 600;
+      }
 
-      try {
-        const res = await fetch("http://localhost:3000/forms", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data)
-        });
+      input,
+      textarea {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        margin-top: 0.5rem;
+        border: 1px solid #ccc;
+        border-radius: var(--radius);
+        font-size: 1rem;
+        transition:
+          border var(--transition),
+          box-shadow var(--transition);
+      }
 
-        if (res.ok) {
-          feedback.textContent = "Solicitação enviada com sucesso!";
-          feedback.style.color = "green";
-          form.reset();
-        } else {
-          throw new Error("Erro ao enviar");
+      input:focus,
+      textarea:focus {
+        border-color: var(--accent-light);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+        outline: none;
+      }
+
+      button {
+        background: var(--accent-light);
+        color: white;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        border-radius: var(--radius);
+        font-size: 1rem;
+        cursor: pointer;
+        transition:
+          background var(--transition),
+          transform var(--transition);
+        margin-top: 1rem;
+        width: 100%;
+      }
+
+      button:hover {
+        background: #2563eb;
+        transform: scale(1.02);
+      }
+
+      .feedback {
+        margin-top: 1rem;
+        font-weight: 500;
+        text-align: center;
+      }
+
+      body.dark {
+        background: var(--bg-dark);
+        color: var(--text-dark);
+      }
+
+      body.dark .card {
+        background: var(--card-dark);
+        color: var(--text-dark);
+      }
+
+      body.dark input,
+      body.dark textarea {
+        background: #0f172a;
+        color: white;
+        border: 1px solid #334155;
+      }
+
+      body.dark input:focus,
+      body.dark textarea:focus {
+        border-color: var(--accent-dark);
+        box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.3);
+      }
+
+      body.dark button {
+        background: var(--accent-dark);
+      }
+
+      body.dark button:hover {
+        background: #3b82f6;
+      }
+
+      @media (max-width: 600px) {
+        .card {
+          padding: 2rem;
         }
-      } catch (err) {
-        feedback.textContent = "Erro ao enviar o formulário.";
-        feedback.style.color = "red";
-      }
-    });
 
-    updateTheme(); // Inicializa tema
-  </script>
-</body>
+        .card h1 {
+          font-size: 1.6rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="theme-toggle" id="themeToggle" title="Alternar tema">🌞</div>
+
+    <main class="container">
+      <form id="budgetForm" class="card" novalidate>
+        <h1>Solicitação de Orçamento</h1>
+
+        <label>
+          Nome*
+          <input type="text" name="nome" required />
+        </label>
+
+        <label>
+          Email*
+          <input type="email" name="email" required />
+        </label>
+
+        <label>
+          Descrição do Projeto*
+          <textarea name="descricao" rows="5" required></textarea>
+        </label>
+
+        <label>
+          Anexos (opcional)
+          <input type="file" name="anexos" multiple />
+        </label>
+
+        <button type="submit">Enviar Solicitação</button>
+        <p id="feedback" class="feedback"></p>
+      </form>
+    </main>
+
+    <script>
+      let isDark = false;
+
+      const themeToggle = document.getElementById('themeToggle');
+      const body = document.body;
+      const feedback = document.getElementById('feedback');
+      const form = document.getElementById('budgetForm');
+
+      function updateTheme() {
+        body.classList.toggle('dark', isDark);
+        themeToggle.textContent = isDark ? '🌙' : '🌞';
+      }
+
+      themeToggle.addEventListener('click', () => {
+        isDark = !isDark;
+        updateTheme();
+      });
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (!form.checkValidity()) {
+          feedback.textContent =
+            'Por favor, preencha todos os campos obrigatórios.';
+          feedback.style.color = 'red';
+          return;
+        }
+
+        const formData = new FormData(form);
+        const data = {
+          nome: formData.get('nome'),
+          email: formData.get('email'),
+          descricao: formData.get('descricao'),
+          anexos: [...formData.getAll('anexos')].map((file) => file.name),
+        };
+
+        try {
+          const res = await fetch('http://localhost:3000/forms', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data),
+          });
+
+          if (res.ok) {
+            feedback.textContent = 'Solicitação enviada com sucesso!';
+            feedback.style.color = 'green';
+            form.reset();
+          } else {
+            throw new Error('Erro ao enviar');
+          }
+        } catch (err) {
+          feedback.textContent = 'Erro ao enviar o formulário.';
+          feedback.style.color = 'red';
+        }
+      });
+
+      updateTheme(); // Inicializa tema
+    </script>
+  </body>
 </html>
