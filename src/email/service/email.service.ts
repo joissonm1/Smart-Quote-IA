@@ -6,6 +6,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import pdf from 'pdf-parse';
 import Tesseract from 'tesseract.js';
+import { EmailQueueService } from './email-queue.service';
 
 @Injectable()
 export class EmailService {
@@ -20,7 +21,7 @@ export class EmailService {
     tlsOptions: { rejectUnauthorized: false },
   };
 
-  constructor() {
+  constructor(private readonly emailQueue: EmailQueueService) {
     this.logger.log('EmailService inicializado');
   }
 
@@ -35,7 +36,6 @@ export class EmailService {
 
           imap.search(['UNSEEN'], (err, results) => {
             if (err) return reject(err);
-
             if (!results || results.length === 0) {
               this.logger.log('Nenhum email novo');
               imap.end();
@@ -59,7 +59,7 @@ export class EmailService {
                     };
 
                     const anexos = await Promise.all(
-                      (parsed.attachments || []).map(async (a) =>
+                      (parsed.attachments || []).map((a) =>
                         this.processAttachment(a),
                       ),
                     );
@@ -171,11 +171,8 @@ export class EmailService {
     }
   }
 
-  @Cron('*/5 * * * * *')
+  @Cron('*/10 * * * * *')
   async handleCron() {
-    console.log(
-      '\n--------------------------------------------------Email--------------------------------------------------',
-    );
     this.logger.log('Verificando emails...');
     try {
       const emails = await this.fetchUnreadEmails();
@@ -183,18 +180,9 @@ export class EmailService {
         this.logger.log(`${emails.length} emails recebidos`);
 
         for (const email of emails) {
-          const jsonFinal = {
-            assunto: email.assunto,
-            descricao: email.descricao,
-            nome: email.cliente.nome,
-            email: email.cliente.email,
-            data: email.data || '',
-            anexo_conteudo: email.anexos.map((a) => a.conteudo).join('\n\n'),
-          };
-
-          this.logger.log('=== EMAIL FINAL ===');
-          this.logger.log(JSON.stringify(jsonFinal, null, 2));
+          this.emailQueue.adicionarEmail(email);
         }
+
         this.clearUploadsFolder();
       }
     } catch (error) {

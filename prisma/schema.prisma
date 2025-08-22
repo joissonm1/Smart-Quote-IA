@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
   // output   = "../generated/prisma"
@@ -22,9 +16,9 @@ model User {
   role            Role
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
-  quotations      Quotation[]      // Inverso de Quotation.manager
+  quotations      Quotation[]
   logs            Log[]
-  aiConversations AIConversation[] // Inverso de AIConversation.user
+  aiConversations AIConversation[]
 }
 
 model Supplier {
@@ -34,10 +28,10 @@ model Supplier {
   phone           String?
   address         String?
   website         String?
-  products        Product[]        // Inverso de Product.supplier
+  products        Product[]        
   ranking         SupplierRanking?
   createdAt       DateTime         @default(now())
-  quotationItems  QuotationItem[]  // Inverso de QuotationItem.supplier
+  quotationItems  QuotationItem[]  
 }
 
 model Product {
@@ -47,7 +41,7 @@ model Product {
   basePrice      Float
   supplierId     String
   supplier       Supplier         @relation(fields: [supplierId], references: [id])
-  quotationItems QuotationItem[]  // Inverso de QuotationItem.product
+  quotationItems QuotationItem[]  
 }
 
 model QuotationRequest {
@@ -108,7 +102,7 @@ model SupplierRanking {
   id          String   @id @default(cuid())
   supplierId  String   @unique
   supplier    Supplier @relation(fields: [supplierId], references: [id])
-  score       Int      @default(0) // Ranking baseado em desempenho
+  score       Int      @default(0)
   lastUpdated DateTime @default(now())
 }
 
@@ -133,3 +127,4 @@ enum Role {
   ADMIN
   MANAGER
 }
+

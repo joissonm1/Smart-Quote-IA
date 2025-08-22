@@ -75,7 +75,10 @@ export class FormsController {
 
   @Get()
   @ApiOperation({ summary: 'Obter todos os pedidos de cotação' })
-  @ApiResponse({ status: 200, description: 'Lista de pedidos retornada com sucesso' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista de pedidos retornada com sucesso',
+  })
   async getAllForms() {
     return this.formsService.getAllFormSubmissions();
   }

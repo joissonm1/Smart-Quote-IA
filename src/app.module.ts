@@ -1,16 +1,14 @@
-// src/app.module.ts
 import { Module } from '@nestjs/common';
-import { AuthModule } from './auth/auth.module';
-import { UserModule } from './user/user.module';
-import { QuoteModule } from './quote/quote.module';
-import { PrismaModule } from './prisma/prisma.module';
 import { ConfigModule } from '@nestjs/config';
-import { EmailModule } from './email/email.module';
-import { QuotationRequestsModule } from './quotation-requests/quotation-requests.module';
-import { APP_GUARD } from '@nestjs/core';
-import { RolesGuard } from './auth/roles.guard';
+import { JwtModule } from '@nestjs/jwt';
 import { ScheduleModule } from '@nestjs/schedule';
+import { APP_GUARD } from '@nestjs/core';
+import { AuthModule } from './login/auth/auth.module';
+import { UserModule } from './login/user/module/user.module';
+import { PrismaModule } from './prisma/prisma.module';
+import { EmailModule } from './email/module/email.module';
 import { FormsModule } from './forms/forms.module';
+import { RolesGuard } from './login/auth/roles.guard';
 
 @Module({
   imports: [
@@ -18,12 +16,16 @@ import { FormsModule } from './forms/forms.module';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    JwtModule.registerAsync({
+      useFactory: () => ({
+        secret: process.env.JWT_SECRET,
+        signOptions: { expiresIn: '1d' },
+      }),
+    }),
     PrismaModule,
     AuthModule,
     UserModule,
-    QuoteModule,
     EmailModule,
-    QuotationRequestsModule,
     FormsModule,
   ],
   providers: [
