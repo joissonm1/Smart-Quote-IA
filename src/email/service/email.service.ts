@@ -31,7 +31,7 @@ export class EmailService {
 
       imap.once('ready', () => {
         this.logger.log('Conectado ao email');
-        imap.openBox('INBOX', false, (err) => {
+        imap.openBox('INBOX', false, (err, box) => {
           if (err) return reject(err);
 
           imap.search(['UNSEEN'], (err, results) => {
@@ -46,9 +46,9 @@ export class EmailService {
 
             const emails: any[] = [];
             const parsePromises: Promise<void>[] = [];
-            const fetcher = imap.fetch(results, { bodies: '' });
+            const fetcher = imap.fetch(results, { bodies: '', markSeen: true });
 
-            fetcher.on('message', (msg) => {
+            fetcher.on('message', (msg, seqno) => {
               msg.on('body', (stream) => {
                 const p = simpleParser(stream)
                   .then(async (parsed) => {
@@ -65,6 +65,7 @@ export class EmailService {
                     );
 
                     const emailJson = {
+                      uid: seqno,
                       cliente,
                       assunto: parsed.subject || '',
                       descricao: parsed.text || '',
@@ -87,8 +88,19 @@ export class EmailService {
               Promise.all(parsePromises)
                 .then(() => {
                   this.logger.log(`${emails.length} emails estruturados`);
-                  imap.end();
-                  resolve(emails);
+                  imap.addFlags(results, '\\Seen', (err2) => {
+                    if (err2)
+                      this.logger.error(
+                        'Erro ao marcar como lido:',
+                        err2.message,
+                      );
+                    else
+                      this.logger.log(
+                        `Marcados ${results.length} emails como lidos`,
+                      );
+                    imap.end();
+                    resolve(emails);
+                  });
                 })
                 .catch((err) => {
                   this.logger.error('Erro processando emails:', err.message);
@@ -140,7 +152,7 @@ export class EmailService {
     return {
       nome: attachment.filename,
       tipo: attachment.contentType,
-      tamanho: attachment.size,
+      size: attachment.size,
       url: `uploads/${attachment.filename}`,
       conteudo,
     };
@@ -180,7 +192,7 @@ export class EmailService {
         this.logger.log(`${emails.length} emails recebidos`);
 
         for (const email of emails) {
-          this.emailQueue.adicionarEmail(email);
+          this.emailQueue.addEmail(email);
         }
 
         this.clearUploadsFolder();

@@ -37,3 +37,9 @@ export interface EmailWebhookPayload {
   };
   subscription: string;
 }
+
+export interface EmailJob {
+  id: string;
+  email: any;
+  processado?: boolean;
+}

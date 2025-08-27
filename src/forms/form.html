@@ -611,12 +611,14 @@
                 formData.append('attachments', files[i]);
               }
 
-              response = await fetch('http://localhost:3000/forms', {
-                method: 'POST',
-                body: formData,
-              });
+              response = await fetch(
+                'https://smart-quote-kgr9.onrender.com/forms',
+                {
+                  method: 'POST',
+                  body: formData,
+                },
+              );
             } else {
-              // If no files, use JSON
               const jsonData = {
                 requester: document.getElementById('requester').value,
                 email: document.getElementById('email').value,
@@ -624,13 +626,16 @@
                 attachments: [],
               };
 
-              response = await fetch('http://localhost:3000/forms', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
+              response = await fetch(
+                'https://smart-quote-kgr9.onrender.com/forms',
+                {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify(jsonData),
                 },
-                body: JSON.stringify(jsonData),
-              });
+              );
             }
 
             if (response.ok) {

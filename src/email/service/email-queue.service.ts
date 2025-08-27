@@ -1,31 +1,45 @@
 import { Injectable, Logger } from '@nestjs/common';
-
-interface EmailJob {
-  email: any;
-}
+import { EmailJob } from '../interface/email.interface';
 
 @Injectable()
 export class EmailQueueService {
   private readonly logger = new Logger(EmailQueueService.name);
-  private fila: EmailJob[] = [];
+  private queue: EmailJob[] = [];
 
-  adicionarEmail(email: any) {
-    this.fila.push({ email });
+  addEmail(email: any) {
+    const job: EmailJob = {
+      id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+      email,
+      processado: false,
+    };
 
-    this.fila.sort((a, b) => {
-      const dataA = new Date(a.email.data).getTime();
-      const dataB = new Date(b.email.data).getTime();
+    this.queue.push(job);
+    this.queue.sort((a, b) => {
+      const dataA = new Date(a.email.data || Date.now()).getTime();
+      const dataB = new Date(b.email.data || Date.now()).getTime();
       return dataA - dataB;
     });
 
-    this.logger.log(`Email enfileirado: ${email.assunto} (${email.data})`);
+    this.logger.log(
+      `Email enfileirado: ${email.assunto || '(sem assunto)'} (${email.data || 's/data'})`,
+    );
   }
 
-  pegarProximo(): EmailJob | null {
-    return this.fila.shift() || null;
+  catchNext(): EmailJob | null {
+    return this.queue[0] || null;
   }
 
-  temEmails(): boolean {
-    return this.fila.length > 0;
+  MarkAsProcessed(id: string) {
+    const job = this.queue.find((j) => j.id === id);
+    if (job) job.processado = true;
+    this.queue = this.queue.filter((j) => !j.processado);
+  }
+
+  haveEmails(): boolean {
+    return this.queue.length > 0;
+  }
+
+  size(): number {
+    return this.queue.length;
   }
 }
