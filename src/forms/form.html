@@ -1,263 +1,719 @@
 <!doctype html>
-<html lang="pt-br">
+<html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Solicitação de Orçamento | Sua Empresa</title>
+    <title>Formulário de Solicitação</title>
     <style>
-      :root {
-        --bg-light: #e0f2ff;
-        --card-light: #ffffff;
-        --text-light: #1f2937;
-        --accent-light: #3b82f6;
-
-        --bg-dark: #0f172a;
-        --card-dark: #1e293b;
-        --text-dark: #f8fafc;
-        --accent-dark: #60a5fa;
-
-        --transition: 0.3s ease;
-        --radius: 10px;
-        --shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
-      }
-
       * {
+        margin: 0;
+        padding: 0;
         box-sizing: border-box;
       }
 
+      :root {
+        --primary-blue: #2563eb;
+        --primary-blue-hover: #1d4ed8;
+        --bg-color: #f8fafc;
+        --card-bg: #ffffff;
+        --text-color: #1f2937;
+        --text-muted: #6b7280;
+        --border-color: #e5e7eb;
+        --input-bg: #ffffff;
+        --input-border: #d1d5db;
+        --input-focus: #2563eb;
+        --shadow:
+          0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+        --shadow-lg:
+          0 10px 15px -3px rgba(0, 0, 0, 0.1),
+          0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      }
+
+      [data-theme='dark'] {
+        --bg-color: #0f172a;
+        --card-bg: #1e293b;
+        --text-color: #f1f5f9;
+        --text-muted: #94a3b8;
+        --border-color: #334155;
+        --input-bg: #334155;
+        --input-border: #475569;
+        --input-focus: #3b82f6;
+        --shadow:
+          0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px 0 rgba(0, 0, 0, 0.2);
+        --shadow-lg:
+          0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+      }
+
       body {
-        margin: 0;
-        font-family: 'Segoe UI', 'Roboto', sans-serif;
-        background: var(--bg-light);
-        color: var(--text-light);
-        transition:
-          background var(--transition),
-          color var(--transition);
+        font-family:
+          -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+          'Helvetica Neue', sans-serif;
+        background-color: var(--bg-color);
+        color: var(--text-color);
+        min-height: 100vh;
+        transition: all 0.3s ease;
+      }
+
+      .container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 2rem 1rem;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
       }
 
       .theme-toggle {
         position: fixed;
-        top: 1rem;
-        right: 1rem;
-        font-size: 1.5rem;
+        top: 1.5rem;
+        left: 1.5rem;
+        width: 40px;
+        height: 40px;
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         cursor: pointer;
-        user-select: none;
-        transition: transform var(--transition);
+        transition: all 0.2s ease;
+        box-shadow: var(--shadow);
       }
 
       .theme-toggle:hover {
-        transform: rotate(20deg);
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-lg);
       }
 
-      .container {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        min-height: 100vh;
+      .theme-toggle svg {
+        width: 18px;
+        height: 18px;
+        color: var(--text-muted);
+      }
+
+      .form-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
         padding: 2rem;
-      }
-
-      .card {
-        background: var(--card-light);
-        color: var(--text-light);
-        padding: 2.5rem;
-        border-radius: var(--radius);
-        box-shadow: var(--shadow);
-        max-width: 600px;
+        box-shadow: var(--shadow-lg);
         width: 100%;
-        transition:
-          background var(--transition),
-          color var(--transition);
+        max-width: 100%;
       }
 
-      .card h1 {
-        font-size: 2rem;
-        margin-bottom: 1.5rem;
+      .form-header {
         text-align: center;
+        margin-bottom: 2rem;
       }
 
-      label {
-        display: block;
-        margin-bottom: 1.2rem;
+      .form-header h1 {
+        font-size: 1.5rem;
         font-weight: 600;
+        color: var(--primary-blue);
+        margin-bottom: 0.5rem;
       }
 
-      input,
-      textarea {
+      .form-header p {
+        color: var(--text-muted);
+        font-size: 0.875rem;
+      }
+
+      .form-group {
+        margin-bottom: 1.5rem;
+      }
+
+      .form-label {
+        display: block;
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: var(--text-color);
+        margin-bottom: 0.5rem;
+      }
+
+      .required {
+        color: #ef4444;
+      }
+
+      .form-input,
+      .form-textarea {
         width: 100%;
-        padding: 0.75rem 1rem;
-        margin-top: 0.5rem;
-        border: 1px solid #ccc;
-        border-radius: var(--radius);
-        font-size: 1rem;
-        transition:
-          border var(--transition),
-          box-shadow var(--transition);
+        padding: 0.75rem;
+        border: 1px solid var(--input-border);
+        border-radius: 8px;
+        font-size: 0.875rem;
+        background: var(--input-bg);
+        color: var(--text-color);
+        transition: all 0.2s ease;
       }
 
-      input:focus,
-      textarea:focus {
-        border-color: var(--accent-light);
-        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+      .form-input:focus,
+      .form-textarea:focus {
         outline: none;
+        border-color: var(--input-focus);
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
       }
 
-      button {
-        background: var(--accent-light);
+      .form-input::placeholder,
+      .form-textarea::placeholder {
+        color: var(--text-muted);
+      }
+
+      .form-textarea {
+        resize: vertical;
+        min-height: 100px;
+      }
+
+      .file-upload-area {
+        border: 2px dashed var(--input-border);
+        border-radius: 8px;
+        padding: 2rem;
+        text-align: center;
+        background: var(--input-bg);
+        transition: all 0.2s ease;
+        cursor: pointer;
+      }
+
+      .file-upload-area:hover {
+        border-color: var(--input-focus);
+        background: rgba(37, 99, 235, 0.02);
+      }
+
+      .file-upload-icon {
+        width: 32px;
+        height: 32px;
+        color: var(--primary-blue);
+        margin: 0 auto 0.75rem;
+      }
+
+      .file-upload-text {
+        color: var(--text-muted);
+        font-size: 0.875rem;
+        margin-bottom: 1rem;
+      }
+
+      .file-input {
+        display: none;
+      }
+
+      .select-button {
+        background: transparent;
+        border: 1px solid var(--primary-blue);
+        color: var(--primary-blue);
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+
+      .select-button:hover {
+        background: var(--primary-blue);
+        color: white;
+      }
+
+      .selected-files {
+        margin-top: 1rem;
+      }
+
+      .file-item {
+        display: flex;
+        align-items: center;
+        justify-content: between;
+        padding: 0.75rem;
+        background: rgba(37, 99, 235, 0.05);
+        border: 1px solid rgba(37, 99, 235, 0.2);
+        border-radius: 6px;
+        margin-top: 0.5rem;
+        font-size: 0.875rem;
+      }
+
+      .file-item-name {
+        color: var(--text-color);
+        flex: 1;
+      }
+
+      .remove-file {
+        background: none;
+        border: none;
+        color: #ef4444;
+        cursor: pointer;
+        padding: 0.25rem;
+        border-radius: 4px;
+        margin-left: 0.5rem;
+      }
+
+      .remove-file:hover {
+        background: rgba(239, 68, 68, 0.1);
+      }
+
+      .submit-btn {
+        width: 100%;
+        background: var(--primary-blue);
         color: white;
         border: none;
-        padding: 0.75rem 1.5rem;
-        border-radius: var(--radius);
-        font-size: 1rem;
-        cursor: pointer;
-        transition:
-          background var(--transition),
-          transform var(--transition);
-        margin-top: 1rem;
-        width: 100%;
-      }
-
-      button:hover {
-        background: #2563eb;
-        transform: scale(1.02);
-      }
-
-      .feedback {
-        margin-top: 1rem;
+        padding: 0.875rem;
+        font-size: 0.875rem;
         font-weight: 500;
-        text-align: center;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        margin-top: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
       }
 
-      body.dark {
-        background: var(--bg-dark);
-        color: var(--text-dark);
+      .submit-btn:hover {
+        background: var(--primary-blue-hover);
       }
 
-      body.dark .card {
-        background: var(--card-dark);
-        color: var(--text-dark);
+      .submit-btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
       }
 
-      body.dark input,
-      body.dark textarea {
-        background: #0f172a;
-        color: white;
-        border: 1px solid #334155;
+      .loading-spinner {
+        width: 16px;
+        height: 16px;
+        border: 2px solid transparent;
+        border-top: 2px solid white;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
       }
 
-      body.dark input:focus,
-      body.dark textarea:focus {
-        border-color: var(--accent-dark);
-        box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.3);
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
       }
 
-      body.dark button {
-        background: var(--accent-dark);
+      .message {
+        padding: 0.75rem;
+        border-radius: 8px;
+        margin-top: 1rem;
+        font-size: 0.875rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        opacity: 1;
+        transform: translateY(0);
+        transition: all 0.3s ease;
       }
 
-      body.dark button:hover {
-        background: #3b82f6;
+      .message.fade-out {
+        opacity: 0;
+        transform: translateY(-10px);
       }
 
-      @media (max-width: 600px) {
-        .card {
-          padding: 2rem;
+      .success {
+        background: #dcfce7;
+        color: #166534;
+        border: 1px solid #bbf7d0;
+      }
+
+      .error {
+        background: #fee2e2;
+        color: #991b1b;
+        border: 1px solid #fecaca;
+      }
+
+      .hidden {
+        display: none;
+      }
+
+      @media (max-width: 640px) {
+        .container {
+          padding: 1rem 0.5rem;
         }
 
-        .card h1 {
-          font-size: 1.6rem;
+        .form-card {
+          padding: 1.5rem;
+        }
+
+        .theme-toggle {
+          top: 1rem;
+          left: 1rem;
         }
       }
     </style>
   </head>
   <body>
-    <div class="theme-toggle" id="themeToggle" title="Alternar tema">🌞</div>
+    <button
+      class="theme-toggle"
+      onclick="toggleTheme()"
+      aria-label="Toggle theme"
+    >
+      <svg
+        class="sun-icon"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
+        ></path>
+      </svg>
+      <svg
+        class="moon-icon hidden"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
+        ></path>
+      </svg>
+    </button>
 
-    <main class="container">
-      <form id="budgetForm" class="card" novalidate>
-        <h1>Solicitação de Orçamento</h1>
+    <div class="container">
+      <div class="form-card">
+        <div class="form-header">
+          <h1>Formulário de Solicitação</h1>
+          <p>Preencha os campos abaixo para enviar sua solicitação</p>
+        </div>
 
-        <label>
-          Nome*
-          <input type="text" name="nome" required />
-        </label>
+        <form id="requestForm">
+          <div class="form-group">
+            <label for="requester" class="form-label">
+              Nome do Solicitante <span class="required">*</span>
+            </label>
+            <input
+              type="text"
+              id="requester"
+              name="requester"
+              class="form-input"
+              required
+              placeholder="Digite seu nome completo"
+            />
+          </div>
 
-        <label>
-          Email*
-          <input type="email" name="email" required />
-        </label>
+          <div class="form-group">
+            <label for="email" class="form-label">
+              E-mail <span class="required">*</span>
+            </label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              class="form-input"
+              required
+              placeholder="seu.email@exemplo.com"
+            />
+          </div>
 
-        <label>
-          Descrição do Projeto*
-          <textarea name="descricao" rows="5" required></textarea>
-        </label>
+          <div class="form-group">
+            <label for="description" class="form-label">
+              Descrição da Solicitação <span class="required">*</span>
+            </label>
+            <textarea
+              id="description"
+              name="description"
+              class="form-textarea"
+              required
+              placeholder="Descreva detalhadamente sua solicitação..."
+            ></textarea>
+          </div>
 
-        <label>
-          Anexos (opcional)
-          <input type="file" name="anexos" multiple />
-        </label>
+          <div class="form-group">
+            <label class="form-label"
+              >Anexos
+              <span style="color: var(--text-muted); font-weight: normal"
+                >(opcional)</span
+              ></label
+            >
+            <div
+              class="file-upload-area"
+              onclick="document.getElementById('attachments').click()"
+            >
+              <svg
+                class="file-upload-icon"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                ></path>
+              </svg>
+              <div class="file-upload-text">
+                Clique para selecionar arquivos ou arraste-os aqui
+              </div>
+              <button type="button" class="select-button">
+                Selecionar Arquivos
+              </button>
+              <input
+                type="file"
+                id="attachments"
+                name="attachments"
+                class="file-input"
+                multiple
+                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+              />
+            </div>
+            <div id="selectedFiles" class="selected-files"></div>
+          </div>
 
-        <button type="submit">Enviar Solicitação</button>
-        <p id="feedback" class="feedback"></p>
-      </form>
-    </main>
+          <button type="submit" class="submit-btn" id="submitBtn">
+            <span class="btn-text">Enviar Solicitação</span>
+            <div class="loading-spinner hidden"></div>
+          </button>
+
+          <div id="message"></div>
+        </form>
+      </div>
+    </div>
 
     <script>
-      let isDark = false;
+      let messageTimeout = null;
 
-      const themeToggle = document.getElementById('themeToggle');
-      const body = document.body;
-      const feedback = document.getElementById('feedback');
-      const form = document.getElementById('budgetForm');
+      function showMessage(content, isSuccess = true) {
+        const messageDiv = document.getElementById('message');
 
-      function updateTheme() {
-        body.classList.toggle('dark', isDark);
-        themeToggle.textContent = isDark ? '🌙' : '🌞';
+        if (messageTimeout) {
+          clearTimeout(messageTimeout);
+        }
+        messageDiv.innerHTML = content;
+
+        messageTimeout = setTimeout(() => {
+          const messageElement = messageDiv.querySelector('.message');
+          if (messageElement) {
+            messageElement.classList.add('fade-out');
+
+            setTimeout(() => {
+              messageDiv.innerHTML = '';
+            }, 300);
+          }
+        }, 2000);
       }
 
-      themeToggle.addEventListener('click', () => {
-        isDark = !isDark;
-        updateTheme();
-      });
+      function toggleTheme() {
+        const currentTheme =
+          document.documentElement.getAttribute('data-theme');
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
 
-      form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        if (!form.checkValidity()) {
-          feedback.textContent =
-            'Por favor, preencha todos os campos obrigatórios.';
-          feedback.style.color = 'red';
-          return;
+        const sunIcon = document.querySelector('.sun-icon');
+        const moonIcon = document.querySelector('.moon-icon');
+
+        if (newTheme === 'dark') {
+          sunIcon.classList.add('hidden');
+          moonIcon.classList.remove('hidden');
+        } else {
+          sunIcon.classList.remove('hidden');
+          moonIcon.classList.add('hidden');
         }
+      }
 
-        const formData = new FormData(form);
-        const data = {
-          nome: formData.get('nome'),
-          email: formData.get('email'),
-          descricao: formData.get('descricao'),
-          anexos: [...formData.getAll('anexos')].map((file) => file.name),
-        };
+      // Load saved theme
+      const savedTheme = localStorage.getItem('theme') || 'light';
+      document.documentElement.setAttribute('data-theme', savedTheme);
 
-        try {
-          const res = await fetch('http://localhost:3000/forms', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data),
-          });
+      if (savedTheme === 'dark') {
+        document.querySelector('.sun-icon').classList.add('hidden');
+        document.querySelector('.moon-icon').classList.remove('hidden');
+      }
 
-          if (res.ok) {
-            feedback.textContent = 'Solicitação enviada com sucesso!';
-            feedback.style.color = 'green';
-            form.reset();
+      // File selection display
+      document
+        .getElementById('attachments')
+        .addEventListener('change', function (e) {
+          const filesContainer = document.getElementById('selectedFiles');
+          const files = Array.from(e.target.files);
+
+          if (files.length > 0) {
+            filesContainer.innerHTML = files
+              .map(
+                (file, index) => `
+                    <div class="file-item">
+                        <span class="file-item-name">${file.name}</span>
+                        <button type="button" class="remove-file" onclick="removeFile(${index})">
+                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M18 6L6 18M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+                `,
+              )
+              .join('');
           } else {
-            throw new Error('Erro ao enviar');
+            filesContainer.innerHTML = '';
           }
-        } catch (err) {
-          feedback.textContent = 'Erro ao enviar o formulário.';
-          feedback.style.color = 'red';
-        }
+        });
+
+      // Remove file function
+      function removeFile(index) {
+        const fileInput = document.getElementById('attachments');
+        const files = Array.from(fileInput.files);
+        files.splice(index, 1);
+
+        // Create new FileList
+        const dt = new DataTransfer();
+        files.forEach((file) => dt.items.add(file));
+        fileInput.files = dt.files;
+
+        // Trigger change event
+        fileInput.dispatchEvent(new Event('change'));
+      }
+
+      // Form submission
+      document
+        .getElementById('requestForm')
+        .addEventListener('submit', async function (e) {
+          e.preventDefault();
+
+          const submitBtn = document.getElementById('submitBtn');
+          const btnText = submitBtn.querySelector('.btn-text');
+          const spinner = submitBtn.querySelector('.loading-spinner');
+
+          // Clear any existing messages
+          document.getElementById('message').innerHTML = '';
+          if (messageTimeout) {
+            clearTimeout(messageTimeout);
+          }
+
+          // Show loading state
+          submitBtn.disabled = true;
+          btnText.textContent = 'Enviando...';
+          spinner.classList.remove('hidden');
+
+          try {
+            // Get files for FormData
+            const files = document.getElementById('attachments').files;
+
+            let response;
+
+            if (files.length > 0) {
+              // If has files, use FormData
+              const formData = new FormData();
+              formData.append(
+                'requester',
+                document.getElementById('requester').value,
+              );
+              formData.append('email', document.getElementById('email').value);
+              formData.append(
+                'description',
+                document.getElementById('description').value,
+              );
+
+              for (let i = 0; i < files.length; i++) {
+                formData.append('attachments', files[i]);
+              }
+
+              response = await fetch('http://localhost:3000/forms', {
+                method: 'POST',
+                body: formData,
+              });
+            } else {
+              // If no files, use JSON
+              const jsonData = {
+                requester: document.getElementById('requester').value,
+                email: document.getElementById('email').value,
+                description: document.getElementById('description').value,
+                attachments: [],
+              };
+
+              response = await fetch('http://localhost:3000/forms', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(jsonData),
+              });
+            }
+
+            if (response.ok) {
+              showMessage(
+                `
+                <div class="message success">
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    Solicitação enviada com sucesso!
+                </div>
+              `,
+                true,
+              );
+
+              document.getElementById('requestForm').reset();
+              document.getElementById('selectedFiles').innerHTML = '';
+            } else {
+              throw new Error('Erro ao enviar formulário');
+            }
+          } catch (error) {
+            showMessage(
+              `
+              <div class="message error">
+                  <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  </svg>
+                  Erro ao enviar solicitação. Tente novamente.
+              </div>
+            `,
+              false,
+            );
+
+            console.error('Error:', error);
+          } finally {
+            // Reset button state
+            submitBtn.disabled = false;
+            btnText.textContent = 'Enviar Solicitação';
+            spinner.classList.add('hidden');
+          }
+        });
+
+      // Prevent default drag behaviors
+      ['dragenter', 'dragover', 'dragleave', 'drop'].forEach((eventName) => {
+        document.addEventListener(eventName, preventDefaults, false);
       });
 
-      updateTheme(); // Inicializa tema
+      function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+
+      // Highlight drop area when item is dragged over it
+      const dropArea = document.querySelector('.file-upload-area');
+      ['dragenter', 'dragover'].forEach((eventName) => {
+        dropArea.addEventListener(eventName, highlight, false);
+      });
+
+      ['dragleave', 'drop'].forEach((eventName) => {
+        dropArea.addEventListener(eventName, unhighlight, false);
+      });
+
+      function highlight(e) {
+        dropArea.style.borderColor = 'var(--input-focus)';
+        dropArea.style.background = 'rgba(37, 99, 235, 0.05)';
+      }
+
+      function unhighlight(e) {
+        dropArea.style.borderColor = 'var(--input-border)';
+        dropArea.style.background = 'var(--input-bg)';
+      }
+
+      // Handle dropped files
+      dropArea.addEventListener('drop', handleDrop, false);
+
+      function handleDrop(e) {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        document.getElementById('attachments').files = files;
+        document
+          .getElementById('attachments')
+          .dispatchEvent(new Event('change'));
+      }
     </script>
   </body>
 </html>
