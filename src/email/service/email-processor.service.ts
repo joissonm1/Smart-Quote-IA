@@ -10,7 +10,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 export class EmailProcessorService {
   private readonly logger = new Logger(EmailProcessorService.name);
 
-  private LIMIAR_ENV = Number(process.env.QUOTE_THRESHOLD_KZ || 2000000);
+  private LIMIAR_ENV = Number(process.env.VALUE_QUOTE || 2000000);
   private SUPERVISOR_EMAIL =
     process.env.SUPERVISOR_EMAIL || 'joissonm.miguel@gmail.com';
 
