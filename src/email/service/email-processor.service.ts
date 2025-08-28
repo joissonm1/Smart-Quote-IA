@@ -4,6 +4,7 @@ import { EmailQueueService } from './email-queue.service';
 import { PdfService } from './pdf.service';
 import { MailerService } from './mailer.service';
 import { EmailJob } from '../interface/email.interface';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class EmailProcessorService {
@@ -17,6 +18,7 @@ export class EmailProcessorService {
     private readonly emailQueue: EmailQueueService,
     private readonly pdfService: PdfService,
     private readonly mailer: MailerService,
+    private readonly prisma: PrismaService,
   ) {}
 
   @Cron('*/10 * * * * *')
@@ -52,7 +54,17 @@ export class EmailProcessorService {
     this.logger.log('=== RESULTADO IA (simulado) ===');
     this.logger.log(JSON.stringify(cotacao, null, 2));
 
+    const saved = await this.prisma.quotationGenerated.create({
+      data: {
+        requestId: job.email.uid.toString(),
+        jsonData: cotacao,
+      },
+    });
+
+    this.logger.log(`Cotação salva no banco com id=${saved.id}`);
+
     const numero = `${Date.now()}`;
+
     const pdfPath = await this.pdfService.generatePreInvoice({
       numero,
       cliente: { nome: cotacao.cliente, email: cotacao.email },

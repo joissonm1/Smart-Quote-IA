@@ -1,13 +1,12 @@
-import {
-  ArgumentMetadata,
-  BadRequestException,
-  Injectable,
-  PipeTransform,
-} from '@nestjs/common';
+import { BadRequestException, Injectable, PipeTransform } from '@nestjs/common';
 
 @Injectable()
 export class ValidateForm implements PipeTransform {
-  transform(value: any, metadata: ArgumentMetadata) {
+  transform(value: any) {
+    if (!value) {
+      throw new BadRequestException('Dados do formulário ausentes');
+    }
+
     if (!value.requester || value.requester.trim().length < 3) {
       throw new BadRequestException('Nome do cliente inválido ou muito curto');
     }

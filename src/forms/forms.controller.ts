@@ -1,15 +1,19 @@
-import { Body, Controller, Post, Get, UsePipes } from '@nestjs/common';
+import { Body, Controller, Post, Get, UsePipes, Param } from '@nestjs/common';
 import { FormsService } from './forms.service';
 import { ApiBody, ApiResponse, ApiTags, ApiOperation } from '@nestjs/swagger';
 import { ValidateForm } from '../forms/validate-form';
+import { QuotationService } from 'src/email/service/quotation.service';
 
 @ApiTags('forms')
 @Controller('forms')
 export class FormsController {
-  constructor(private readonly formsService: FormsService) {}
+  constructor(
+    private readonly formsService: FormsService,
+    private readonly quotationService: QuotationService,
+  ) {}
 
   @Post()
-  @UsePipes(new ValidateForm())
+  // @UsePipes(new ValidateForm())
   @ApiOperation({ summary: 'Submeter um pedido de cotação' })
   @ApiResponse({ status: 201, description: 'Pedido criado com sucesso' })
   @ApiResponse({ status: 400, description: 'Dados inválidos' })
@@ -81,5 +85,15 @@ export class FormsController {
   })
   async getAllForms() {
     return this.formsService.getAllFormSubmissions();
+  }
+
+  @ApiOperation({ summary: 'Obter todos os pedidos de cotação com base no id' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista de pedidos retornada com sucesso',
+  })
+  @Get('quotations/:requestId')
+  async getFormQuotation(@Param('requestId') requestId: string) {
+    return this.quotationService.findByRequestId(requestId);
   }
 }
