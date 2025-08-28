@@ -36,7 +36,7 @@ export class UserService {
         name: name.trim(),
         email,
         password: hashedPassword,
-        role: Role.ADMIN,
+        role: Role.MANAGER,
       },
     });
   }

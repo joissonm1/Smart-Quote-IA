@@ -34,10 +34,10 @@ export class EmailController {
   @Patch('quotations/:id/status')
   async updateStatus(
     @Param('id') id: string,
-    @Body('status') status: 'approved' | 'rejected',
+    @Body('status') status: 'COMPLETED' | 'rejected',
   ) {
     const prismaStatus =
-      status === 'approved'
+      status === 'COMPLETED'
         ? $Enums.RequestStatus.COMPLETED
         : $Enums.RequestStatus.REJECTED;
 
@@ -45,7 +45,7 @@ export class EmailController {
   }
 
   @ApiOperation({
-    summary: 'Resumo(quantas aprovadas, rejeitadas, pendentes)',
+    summary: 'Resumo de status (quantas aprovadas, rejeitadas, pendentes)',
   })
   @ApiResponse({ status: 200 })
   @Get('quotations/status/summary')
