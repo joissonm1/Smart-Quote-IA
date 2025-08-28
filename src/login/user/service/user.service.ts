@@ -2,31 +2,58 @@ import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { Role } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
+import { z } from 'zod';
+
+const nameSchema = z.string().min(2, 'Nome deve ter pelo menos 2 caracteres');
+
+const emailSchema = z.string().email('Email inválido');
+
+const passwordSchema = z
+  .string()
+  .min(8, 'Senha deve ter no mínimo 8 caracteres')
+  .refine((val) => val.split('').some((c) => c >= 'A' && c <= 'Z'), {
+    message: 'Senha deve conter pelo menos 1 letra maiúscula',
+  })
+  .refine((val) => val.split('').some((c) => c >= 'a' && c <= 'z'), {
+    message: 'Senha deve conter pelo menos 1 letra minúscula',
+  })
+  .refine(
+    (val) => {
+      const allowed =
+        'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+      return val.split('').some((c) => !allowed.includes(c));
+    },
+    { message: 'Senha deve conter pelo menos 1 símbolo' },
+  )
+  .refine((val) => val.split('').some((c) => !isNaN(Number(c))), {
+    message: 'Senha deve conter pelo menos 1 número',
+  });
 
 @Injectable()
 export class UserService {
   constructor(private prisma: PrismaService) {}
 
   async createUser(name: string, email: string, password: string) {
-    if (!name || name.trim().length < 2) {
-      throw new BadRequestException('Nome deve ter pelo menos 2 caracteres');
+    try {
+      nameSchema.parse(name.trim());
+      emailSchema.parse(email.trim().toLowerCase());
+      passwordSchema.parse(password);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        throw new BadRequestException(
+          err.errors.map((e) => e.message).join(', '),
+        );
+      }
+      throw err;
     }
 
-    email = email.toLowerCase().trim();
+    const normalizedEmail = email.trim().toLowerCase();
 
-    if (!this.isValidEmail(email)) {
-      throw new BadRequestException('Email inválido');
-    }
-
-    const existing = await this.prisma.user.findUnique({ where: { email } });
+    const existing = await this.prisma.user.findUnique({
+      where: { email: normalizedEmail },
+    });
     if (existing) {
       throw new BadRequestException('Email já está em uso');
-    }
-
-    if (!this.isStrongPassword(password)) {
-      throw new BadRequestException(
-        'Senha deve ter no mínimo 8 caracteres, incluindo 1 letra maiúscula, 1 minúscula, 1 número e 1 símbolo',
-      );
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -34,22 +61,11 @@ export class UserService {
     return this.prisma.user.create({
       data: {
         name: name.trim(),
-        email,
+        email: normalizedEmail,
         password: hashedPassword,
         role: Role.MANAGER,
       },
     });
-  }
-
-  private isValidEmail(email: string): boolean {
-    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return regex.test(email);
-  }
-
-  private isStrongPassword(password: string): boolean {
-    const regex =
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
-    return regex.test(password);
   }
 
   async findByEmail(email: string) {
