@@ -9,6 +9,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { EmailModule } from './email/module/email.module';
 import { FormsModule } from './forms/forms.module';
 import { RolesGuard } from './login/auth/roles.guard';
+import { DashboardModule } from './dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { RolesGuard } from './login/auth/roles.guard';
     UserModule,
     EmailModule,
     FormsModule,
+    DashboardModule,
   ],
   providers: [
     {
