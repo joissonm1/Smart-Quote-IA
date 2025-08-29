@@ -83,7 +83,7 @@ export class EmailProcessorService {
       ? this.SUPERVISOR_EMAIL
       : cotacao.email;
 
-    const corpo = this.mensagemEmail(cotacao, foiParaSupervisor);
+    const corpo = this.messageEmail(cotacao, foiParaSupervisor);
 
     await this.mailer.sendPreInvoice({
       para: enviarPara,
@@ -134,27 +134,34 @@ export class EmailProcessorService {
     };
   }
 
-  private mensagemEmail(
+  private messageEmail(
     cotacao: { cliente: string; total: number },
     foiParaSupervisor: boolean,
   ) {
     if (foiParaSupervisor) {
       return [
-        `Supervisor,`,
+        `Prezado(a) Supervisor,`,
         ``,
-        `Pré-fatura acima do limiar configurado.`,
-        `Cliente: ${cotacao.cliente}`,
-        `Total: ${cotacao.total.toLocaleString()} Kz`,
+        `A pré-fatura do cliente **${cotacao.cliente}** foi gerada e requer a sua revisão antes do envio.`,
         ``,
-        `Favor revisar e enviar ao cliente.`,
+        `Valor total: ${cotacao.total.toLocaleString()} Kzs`,
+        `O documento em anexo contém todos os detalhes.`,
+        ``,
+        `Por favor, analise as informações e, se estiverem corretas, encaminhe ao cliente.`,
+        ``,
+        `Atenciosamente,`,
+        `Equipe RCS`,
       ].join('\n');
     }
+
     return [
       `Prezado(a) ${cotacao.cliente},`,
       ``,
-      `Recebemos sua solicitação e geramos uma pré-fatura com base nas informações enviadas.`,
-      `Por favor, verifique os detalhes no anexo.`,
-      `Caso haja algum ajuste, basta responder este e-mail.`,
+      `Recebemos sua solicitação e geramos uma pré-fatura com base nas informações fornecidas.`,
+      ``,
+      `O documento em anexo contém todos os detalhes da sua cotação.`,
+      ``,
+      `Caso haja necessidade de ajustes, basta responder a este e-mail.`,
       ``,
       `Atenciosamente,`,
       `Equipe RCS`,

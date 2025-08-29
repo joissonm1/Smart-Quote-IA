@@ -611,10 +611,13 @@
                 formData.append('attachments', files[i]);
               }
 
-              response = await fetch('http://localhost:3001/forms', {
-                method: 'POST',
-                body: formData,
-              });
+              response = await fetch(
+                'https://smart-quote-ia-2.onrender.com/forms',
+                {
+                  method: 'POST',
+                  body: formData,
+                },
+              );
             } else {
               const jsonData = {
                 requester: document.getElementById('requester').value,
@@ -623,13 +626,16 @@
                 attachments: [],
               };
 
-              response = await fetch('http://localhost:3001/forms', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
+              response = await fetch(
+                'https://smart-quote-ia-2.onrender.com/forms',
+                {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify(jsonData),
                 },
-                body: JSON.stringify(jsonData),
-              });
+              );
             }
 
             if (response.ok) {

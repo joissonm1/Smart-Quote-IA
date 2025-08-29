@@ -174,10 +174,16 @@ export class EmailService {
       fs.readdirSync(uploadDir).forEach((file) => {
         const filePath = path.join(uploadDir, file);
         try {
-          fs.unlinkSync(filePath);
-          this.logger.log(`Arquivo removido: ${file}`);
+          const stat = fs.statSync(filePath);
+
+          if (stat.isFile()) {
+            fs.unlinkSync(filePath);
+            this.logger.log(`Arquivo removido: ${file}`);
+          } else {
+            this.logger.log(`Ignorado (é uma pasta): ${file}`);
+          }
         } catch (err) {
-          this.logger.error(`Erro ao remover arquivo ${file}: ${err.message}`);
+          this.logger.error(`Erro ao remover ${file}: ${err.message}`);
         }
       });
     }
