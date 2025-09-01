@@ -7,9 +7,10 @@ import { PdfService } from '../service/pdf.service';
 import { MailerService } from '../service/mailer.service';
 import { EmailController } from '../controller/email.controller';
 import { QuotationService } from '../service/quotation.service';
+import { HttpModule } from '@nestjs/axios';
 
 @Module({
-  imports: [ConfigModule],
+  imports: [ConfigModule, HttpModule],
   controllers: [EmailController],
   providers: [
     EmailService,

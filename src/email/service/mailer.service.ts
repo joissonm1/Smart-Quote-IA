@@ -23,12 +23,12 @@ export class MailerService {
     para: string;
     assunto: string;
     corpoTexto: string;
-    anexoPdfPath: string;
+    anexoPdfPath?: string;
   }) {
     const { para, assunto, corpoTexto, anexoPdfPath } = opts;
 
     const attachments: nodemailer.Attachment[] = [];
-    if (fs.existsSync(anexoPdfPath)) {
+    if (anexoPdfPath && fs.existsSync(anexoPdfPath)) {
       attachments.push({
         filename: anexoPdfPath.split('/').pop() || 'prefatura.pdf',
         path: anexoPdfPath,

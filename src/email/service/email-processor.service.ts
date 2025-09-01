@@ -5,14 +5,17 @@ import { PdfService } from './pdf.service';
 import { MailerService } from './mailer.service';
 import { EmailJob } from '../interface/email.interface';
 import { PrismaService } from 'src/prisma/prisma.service';
+import axios from 'axios';
 
 @Injectable()
 export class EmailProcessorService {
   private readonly logger = new Logger(EmailProcessorService.name);
 
-  private LIMIAR_ENV = Number(process.env.VALUE_QUOTE || 2000000);
   private SUPERVISOR_EMAIL =
     process.env.SUPERVISOR_EMAIL || 'joissonm.miguel@gmail.com';
+  private IA_ENDPOINT =
+    process.env.IA_ENDPOINT ||
+    'https://smartquote-production-fc54.up.railway.app/processar-requisicao';
 
   constructor(
     private readonly emailQueue: EmailQueueService,
@@ -36,11 +39,9 @@ export class EmailProcessorService {
     const email = job.email;
 
     const jsonBase = {
-      assunto: email.assunto || '',
-      descricao: email.descricao || '',
+      mensagem: email.descricao || '',
       nome: email.cliente?.nome || 'Cliente',
       email: email.cliente?.email || '',
-      data: email.data || new Date().toISOString(),
       anexo_conteudo: Array.isArray(email.anexos)
         ? email.anexos.map((a: any) => a.conteudo || '').join('\n\n')
         : '',
@@ -49,9 +50,9 @@ export class EmailProcessorService {
     this.logger.log('=== EMAIL CAPTURADO ===');
     this.logger.log(JSON.stringify(jsonBase, null, 2));
 
-    const cotacao = await this.simularIA(jsonBase);
+    const cotacao = await this.callIA(jsonBase);
 
-    this.logger.log('=== RESULTADO IA (simulado) ===');
+    this.logger.log('=== RESULTADO IA ===');
     this.logger.log(JSON.stringify(cotacao, null, 2));
 
     const saved = await this.prisma.quotationGenerated.create({
@@ -68,22 +69,14 @@ export class EmailProcessorService {
     const pdfPath = await this.pdfService.generatePreInvoice({
       numero,
       cliente: { nome: cotacao.cliente, email: cotacao.email },
-      itens: cotacao.itens.map((i) => ({
-        descricao: i.descricao,
-        quantidade: i.quantidade,
-        precoUnit: i.precoUnit,
-      })),
+      itens: cotacao.itens,
       total: cotacao.total,
       observacoes: cotacao.observacoes,
     });
 
-    const LIMIAR = this.LIMIAR_ENV;
-    const foiParaSupervisor = cotacao.total >= LIMIAR;
-    const enviarPara = foiParaSupervisor
-      ? this.SUPERVISOR_EMAIL
-      : cotacao.email;
+    const enviarPara = cotacao.revisao ? this.SUPERVISOR_EMAIL : cotacao.email;
 
-    const corpo = this.messageEmail(cotacao, foiParaSupervisor);
+    const corpo = this.messageEmail(cotacao, cotacao.revisao);
 
     await this.mailer.sendPreInvoice({
       para: enviarPara,
@@ -95,43 +88,80 @@ export class EmailProcessorService {
     this.emailQueue.MarkAsProcessed(job.id);
 
     this.logger.log(
-      `Fluxo concluído. Total: ${cotacao.total} Kz | Limiar: ${LIMIAR} Kz | Destino: ${enviarPara}`,
+      `Fluxo concluído. Total: ${cotacao.total.toLocaleString()} Kz | Destino: ${enviarPara}`,
     );
   }
 
-  private async simularIA(dados: {
+  private async callIA(dados: {
+    mensagem: string;
     nome: string;
     email: string;
-    descricao: string;
-    anexo_conteudo: string;
+    anexo_conteudo?: string;
   }) {
-    const temPalavraPC =
-      /computador|notebook|laptop|pc/i.test(dados.descricao) ||
-      /computador|notebook|laptop|pc/i.test(dados.anexo_conteudo);
+    try {
+      const response = await axios.post(this.IA_ENDPOINT, dados, {
+        headers: { 'Content-Type': 'application/json' },
+      });
 
-    const itens = temPalavraPC
-      ? [
+      const { isvalide, revisao, conteudo } = response.data;
+
+      if (!isvalide) {
+        throw new Error('IA retornou isvalide=false');
+      }
+
+      const precoExtraido = this.extractPreco(conteudo.resposta_email.corpo);
+
+      const itens = [
+        {
+          descricao: conteudo.produto,
+          quantidade: 1,
+          precoUnit: precoExtraido,
+        },
+      ];
+
+      const total = itens.reduce(
+        (acc, it) => acc + it.quantidade * it.precoUnit,
+        0,
+      );
+
+      return {
+        cliente: conteudo.nome,
+        email: conteudo.email_cliente,
+        itens,
+        total,
+        revisao,
+        observacoes: conteudo.resposta_email?.corpo || '',
+      };
+    } catch (err) {
+      this.logger.error(
+        `Erro ao chamar IA: ${(err as Error).message}`,
+        (err as Error).stack,
+      );
+
+      return {
+        cliente: dados.nome,
+        email: dados.email,
+        itens: [
           {
-            descricao: 'Laptop 15" 8GB/256GB',
+            descricao: 'Produto não identificado',
             quantidade: 1,
-            precoUnit: 350000,
+            precoUnit: 0,
           },
-          { descricao: 'Mouse óptico', quantidade: 1, precoUnit: 5000 },
-        ]
-      : [{ descricao: 'Gerador 5kVA', quantidade: 2, precoUnit: 1200000 }];
+        ],
+        total: 0,
+        revisao: true,
+        observacoes: 'Erro ao processar IA. Gerado fallback.',
+      };
+    }
+  }
 
-    const total = itens.reduce(
-      (acc, it) => acc + it.quantidade * it.precoUnit,
-      0,
-    );
-
-    return {
-      cliente: dados.nome,
-      email: dados.email,
-      itens,
-      total,
-      observacoes: 'Cotação simulada; valores estimados com IVA incluso.',
-    };
+  private extractPreco(texto: string): number {
+    if (!texto) return 0;
+    const match = texto.match(/([\d\.]+)\s*Kz/i);
+    if (match) {
+      return Number(match[1].replace(/\./g, '')) || 0;
+    }
+    return 0;
   }
 
   private messageEmail(
@@ -147,7 +177,7 @@ export class EmailProcessorService {
         `Valor total: ${cotacao.total.toLocaleString()} Kzs`,
         `O documento em anexo contém todos os detalhes.`,
         ``,
-        `Por favor, analise as informações e, se estiverem corretas, encaminhe ao cliente.`,
+        `Por favor, analise e, se estiver correto, encaminhe ao cliente.`,
         ``,
         `Atenciosamente,`,
         `Equipe RCS`,
