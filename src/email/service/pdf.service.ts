@@ -1,7 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import * as path from 'path';
 import * as fs from 'fs';
-import * as puppeteer from 'puppeteer';
+import puppeteer from 'puppeteer-core';
+import chromium from '@sparticuz/chromium';
 
 @Injectable()
 export class PdfService {
@@ -36,12 +37,11 @@ export class PdfService {
       logoBase64 = `data:image/png;base64,${logoBuffer.toString('base64')}`;
     }
 
-    // Calcular subtotal
     const subtotal = data.itens.reduce(
       (acc, item) => acc + item.quantidade * item.precoUnit,
       0,
     );
-    const iva = 0; // Assumindo 0% de IVA por padrão
+    const iva = 0;
 
     const html = `
       <!DOCTYPE html>
@@ -430,40 +430,82 @@ export class PdfService {
       </html>
     `;
 
-    const browser = await puppeteer.launch({
-      headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox'],
-    });
+    let browser;
 
-    const page = await browser.newPage();
-    await page.setContent(html, { waitUntil: 'networkidle0' });
+    try {
+      // Verificar se está em ambiente de produção (Render)
+      const isProduction =
+        process.env.NODE_ENV === 'production' || process.env.RENDER;
 
-    await page.pdf({
-      path: filePath,
-      format: 'A4',
-      printBackground: true,
-      displayHeaderFooter: true,
-      headerTemplate: '<span></span>',
-      footerTemplate: `
-        <div style="font-size:10px; width:100%; text-align:center; color:#6c757d; margin-top: 10px;">
-          Página <span class="pageNumber"></span> de <span class="totalPages"></span>
-        </div>
-      `,
-      margin: {
-        top: '60px',
-        bottom: '80px',
-        left: '40px',
-        right: '40px',
-      },
-    });
+      if (isProduction) {
+        // Configuração para produção (Render) usando @sparticuz/chromium
+        browser = await puppeteer.launch({
+          args: [
+            ...chromium.args,
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-accelerated-2d-canvas',
+            '--no-first-run',
+            '--no-zygote',
+            '--single-process',
+            '--disable-gpu',
+            '--disable-web-security',
+            '--disable-features=VizDisplayCompositor',
+          ],
+          executablePath: await chromium.executablePath(),
+          headless: true,
+        });
+      } else {
+        // Configuração para desenvolvimento local
+        browser = await puppeteer.launch({
+          headless: true,
+          args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-accelerated-2d-canvas',
+            '--no-first-run',
+            '--no-zygote',
+            '--disable-gpu',
+          ],
+        });
+      }
 
-    await browser.close();
+      const page = await browser.newPage();
+      await page.setContent(html, { waitUntil: 'networkidle0' });
 
-    this.logger.log(`Pré-fatura profissional gerada: ${filePath}`);
-    return filePath;
+      await page.pdf({
+        path: filePath,
+        format: 'A4',
+        printBackground: true,
+        displayHeaderFooter: true,
+        headerTemplate: '<span></span>',
+        footerTemplate: `
+          <div style="font-size:10px; width:100%; text-align:center; color:#6c757d; margin-top: 10px;">
+            Página <span class="pageNumber"></span> de <span class="totalPages"></span>
+          </div>
+        `,
+        margin: {
+          top: '60px',
+          bottom: '80px',
+          left: '40px',
+          right: '40px',
+        },
+      });
+
+      this.logger.log(`Pré-fatura profissional gerada: ${filePath}`);
+      return filePath;
+    } catch (error) {
+      this.logger.error('Erro ao gerar PDF:', error);
+      throw new Error(`Falha na geração do PDF: ${error.message}`);
+    } finally {
+      if (browser) {
+        await browser.close();
+      }
+    }
   }
 
-  // Método auxiliar para gerar dados de exemplo
   async generateSamplePreInvoice(): Promise<string> {
     const sampleData = {
       numero: `PF-${new Date().getFullYear()}-${String(Date.now()).slice(-3)}`,
