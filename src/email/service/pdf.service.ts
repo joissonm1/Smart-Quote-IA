@@ -1,8 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import * as path from 'path';
 import * as fs from 'fs';
-import puppeteer from 'puppeteer-core';
-import chromium from '@sparticuz/chromium';
+import * as puppeteer from 'puppeteer';
 
 @Injectable()
 export class PdfService {
@@ -36,7 +35,6 @@ export class PdfService {
       const logoBuffer = fs.readFileSync(logoPath);
       logoBase64 = `data:image/png;base64,${logoBuffer.toString('base64')}`;
     }
-
     const subtotal = data.itens.reduce(
       (acc, item) => acc + item.quantidade * item.precoUnit,
       0,
@@ -430,80 +428,37 @@ export class PdfService {
       </html>
     `;
 
-    let browser;
+    const browser = await puppeteer.launch({
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    });
 
-    try {
-      // Verificar se está em ambiente de produção (Render)
-      const isProduction =
-        process.env.NODE_ENV === 'production' || process.env.RENDER;
+    const page = await browser.newPage();
+    await page.setContent(html, { waitUntil: 'networkidle0' });
 
-      if (isProduction) {
-        // Configuração para produção (Render) usando @sparticuz/chromium
-        browser = await puppeteer.launch({
-          args: [
-            ...chromium.args,
-            '--no-sandbox',
-            '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage',
-            '--disable-accelerated-2d-canvas',
-            '--no-first-run',
-            '--no-zygote',
-            '--single-process',
-            '--disable-gpu',
-            '--disable-web-security',
-            '--disable-features=VizDisplayCompositor',
-          ],
-          executablePath: await chromium.executablePath(),
-          headless: true,
-        });
-      } else {
-        // Configuração para desenvolvimento local
-        browser = await puppeteer.launch({
-          headless: true,
-          args: [
-            '--no-sandbox',
-            '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage',
-            '--disable-accelerated-2d-canvas',
-            '--no-first-run',
-            '--no-zygote',
-            '--disable-gpu',
-          ],
-        });
-      }
+    await page.pdf({
+      path: filePath,
+      format: 'A4',
+      printBackground: true,
+      displayHeaderFooter: true,
+      headerTemplate: '<span></span>',
+      footerTemplate: `
+        <div style="font-size:10px; width:100%; text-align:center; color:#6c757d; margin-top: 10px;">
+          Página <span class="pageNumber"></span> de <span class="totalPages"></span>
+        </div>
+      `,
+      margin: {
+        top: '60px',
+        bottom: '80px',
+        left: '40px',
+        right: '40px',
+      },
+    });
 
-      const page = await browser.newPage();
-      await page.setContent(html, { waitUntil: 'networkidle0' });
+    await browser.close();
 
-      await page.pdf({
-        path: filePath,
-        format: 'A4',
-        printBackground: true,
-        displayHeaderFooter: true,
-        headerTemplate: '<span></span>',
-        footerTemplate: `
-          <div style="font-size:10px; width:100%; text-align:center; color:#6c757d; margin-top: 10px;">
-            Página <span class="pageNumber"></span> de <span class="totalPages"></span>
-          </div>
-        `,
-        margin: {
-          top: '60px',
-          bottom: '80px',
-          left: '40px',
-          right: '40px',
-        },
-      });
-
-      this.logger.log(`Pré-fatura profissional gerada: ${filePath}`);
-      return filePath;
-    } catch (error) {
-      this.logger.error('Erro ao gerar PDF:', error);
-      throw new Error(`Falha na geração do PDF: ${error.message}`);
-    } finally {
-      if (browser) {
-        await browser.close();
-      }
-    }
+    this.logger.log(`Pré-fatura profissional gerada: ${filePath}`);
+    return filePath;
   }
 
   async generateSamplePreInvoice(): Promise<string> {
