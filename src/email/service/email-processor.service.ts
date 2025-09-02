@@ -73,10 +73,13 @@ Responda educadamente informando:
     this.logger.log(`Cotação salva no banco com id=${saved.id}`);
 
     const numero = `${Date.now()}`;
-    let pdfPath: string | null = null;
 
-    // Só gera PDF quando há pedido real
-    if (cotacao.itens?.some((it) => it.quantidade > 0 && it.precoUnit > 0)) {
+    let pdfPath: string | null = null;
+    let assunto = '';
+
+    if (cotacao.itens.length === 1 && cotacao.itens[0].quantidade === 0) {
+      assunto = `Solicitação não identificada - RCS`;
+    } else {
       pdfPath = await this.pdfService.generatePreInvoice({
         numero,
         cliente: { nome: cotacao.cliente, email: cotacao.email },
@@ -84,16 +87,19 @@ Responda educadamente informando:
         total: cotacao.total,
         observacoes: cotacao.observacoes,
       });
+
+      assunto = `Pré-Fatura RCS #${numero}`;
     }
 
     const enviarPara = cotacao.revisao ? this.SUPERVISOR_EMAIL : cotacao.email;
+
     const corpo = this.messageEmail(cotacao, cotacao.revisao, numero);
 
     await this.mailer.sendPreInvoice({
       para: enviarPara,
-      assunto: `Pré-Fatura RCS #${numero}`,
+      assunto,
       corpoTexto: corpo,
-      anexoPdfPath: pdfPath || undefined, // só anexa se existir
+      anexoPdfPath: pdfPath || undefined,
     });
 
     this.emailQueue.MarkAsProcessed(job.id);
@@ -120,11 +126,17 @@ Responda educadamente informando:
         return {
           cliente: dados.nome,
           email: dados.email,
-          itens: [],
+          itens: [
+            {
+              descricao: 'Nenhum produto identificado',
+              quantidade: 0,
+              precoUnit: 0,
+            },
+          ],
           total: 0,
           revisao: false,
           observacoes:
-            'Prezado cliente, não conseguimos identificar os produtos desejados. Por favor, envie mais detalhes.',
+            'Não conseguimos identificar os produtos desejados. Por favor, envie mais detalhes.',
         };
       }
 
@@ -165,7 +177,13 @@ Responda educadamente informando:
       return {
         cliente: dados.nome,
         email: dados.email,
-        itens: [],
+        itens: [
+          {
+            descricao: 'Nenhum produto identificado',
+            quantidade: 0,
+            precoUnit: 0,
+          },
+        ],
         total: 0,
         revisao: false,
         observacoes:
