@@ -78,10 +78,8 @@ Responda educadamente informando:
     let assunto = '';
 
     if (!cotacao.isvalide) {
-      // IA não identificou os produtos
       assunto = `Solicitação não identificada - RCS`;
     } else {
-      // Caso válido, sempre gera PDF
       pdfPath = await this.pdfService.generatePreInvoice({
         numero,
         cliente: { nome: cotacao.cliente, email: cotacao.email },
@@ -274,7 +272,7 @@ Responda educadamente informando:
       ``,
       `O documento em anexo contém todos os detalhes da sua pré-fatura.`,
       ``,
-      `Caso haja necessidade de ajustes, basta responder a este e-mail.`,
+      `Caso haja necessidade de ajustes, basta contactar a equipe rcs.`,
       ``,
       `Atenciosamente,`,
       `Equipe RCS`,
