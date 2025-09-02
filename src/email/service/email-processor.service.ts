@@ -15,7 +15,7 @@ export class EmailProcessorService {
     process.env.SUPERVISOR_EMAIL || 'joissonm.miguel@gmail.com';
   private IA_ENDPOINT =
     process.env.IA_ENDPOINT ||
-    'https://smartquote-production-fc54.up.railway.app/processar-requisicao';
+    'https://smartquote-iom8.onrender.com/processar-requisicao';
 
   constructor(
     private readonly emailQueue: EmailQueueService,
@@ -146,7 +146,6 @@ Responda educadamente informando:
         };
       }
 
-      // Caso a IA retorne dentro de "conteudo"
       const conteudo = data.conteudo || data;
 
       const itens =
