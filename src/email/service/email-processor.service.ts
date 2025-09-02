@@ -77,9 +77,11 @@ Responda educadamente informando:
     let pdfPath: string | null = null;
     let assunto = '';
 
-    if (cotacao.itens.length === 1 && cotacao.itens[0].quantidade === 0) {
+    if (!cotacao.isvalide) {
+      // IA não identificou os produtos
       assunto = `Solicitação não identificada - RCS`;
     } else {
+      // Caso válido, sempre gera PDF
       pdfPath = await this.pdfService.generatePreInvoice({
         numero,
         cliente: { nome: cotacao.cliente, email: cotacao.email },
@@ -124,6 +126,7 @@ Responda educadamente informando:
 
       if (!isvalide) {
         return {
+          isvalide: false,
           cliente: dados.nome,
           email: dados.email,
           itens: [
@@ -161,6 +164,7 @@ Responda educadamente informando:
       }
 
       return {
+        isvalide: true,
         cliente: conteudo.nome,
         email: conteudo.email_cliente,
         itens,
@@ -175,6 +179,7 @@ Responda educadamente informando:
       );
 
       return {
+        isvalide: false,
         cliente: dados.nome,
         email: dados.email,
         itens: [
@@ -218,6 +223,7 @@ Responda educadamente informando:
       total: number;
       itens: any[];
       observacoes: string;
+      isvalide?: boolean;
     },
     foiParaSupervisor: boolean,
     numero: string,
@@ -238,7 +244,7 @@ Responda educadamente informando:
       ].join('\n');
     }
 
-    if (!cotacao.itens || cotacao.itens.length === 0 || cotacao.total === 0) {
+    if (!cotacao.isvalide) {
       return [
         `Prezado(a) ${cotacao.cliente},`,
         ``,
