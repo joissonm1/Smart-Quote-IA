@@ -9,8 +9,13 @@ export class PdfService {
 
   async generatePreInvoice(data: {
     numero: string;
-    cliente: { nome: string; email: string };
-    itens: { descricao: string; quantidade: number; precoUnit: number }[];
+    cliente: { nome: string; email: string; nif?: string };
+    itens: {
+      descricao: string;
+      detalhes?: string;
+      quantidade: number;
+      precoUnit: number;
+    }[];
     total: number;
     observacoes?: string;
   }): Promise<string> {
@@ -31,141 +36,408 @@ export class PdfService {
       logoBase64 = `data:image/png;base64,${logoBuffer.toString('base64')}`;
     }
 
+    // Calcular subtotal
+    const subtotal = data.itens.reduce(
+      (acc, item) => acc + item.quantidade * item.precoUnit,
+      0,
+    );
+    const iva = 0; // Assumindo 0% de IVA por padrão
+
     const html = `
+      <!DOCTYPE html>
       <html lang="pt">
         <head>
           <meta charset="UTF-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Pré-Fatura RCS</title>
           <style>
             body {
-              font-family: Arial, sans-serif;
-              margin: 40px;
-              color: #333;
+              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+              margin: 0;
+              color: #2c3e50;
+              background: #f8f9fa;
+              line-height: 1.4;
             }
+            
+            .document {
+              max-width: 210mm;
+              margin: 20px auto;
+              background: white;
+              box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+              min-height: 297mm;
+            }
+            
+            .content {
+              padding: 40px;
+            }
+            
             header {
               display: flex;
               justify-content: space-between;
+              align-items: flex-start;
+              margin-bottom: 40px;
+              padding-bottom: 20px;
+              border-bottom: 3px solid #2c5aa0;
+            }
+            
+            .company-info {
+              flex: 1;
+            }
+            
+            .company-name {
+              font-size: 28px;
+              font-weight: 700;
+              color: #2c5aa0;
+              margin: 0 0 5px 0;
+              letter-spacing: -0.5px;
+            }
+            
+            .company-details {
+              font-size: 11px;
+              color: #6c757d;
+              line-height: 1.3;
+            }
+            
+            .logo-section {
+              width: 80px;
+              height: 80px;
+              background: linear-gradient(135deg, #2c5aa0, #1a73e8);
+              border-radius: 8px;
+              display: flex;
               align-items: center;
-              border-bottom: 2px solid #1a73e8;
-              padding-bottom: 10px;
-              margin-bottom: 20px;
+              justify-content: center;
+              color: white;
+              font-weight: bold;
+              font-size: 24px;
+              margin-left: 20px;
             }
-            header img {
-              height: 50px;
+            
+            .logo-section img {
+              width: 70px;
+              height: 70px;
+              object-fit: contain;
+              border-radius: 4px;
             }
-            h1 {
-              margin: 0;
-              color: #1a73e8;
-              font-size: 20px;
+            
+            .document-title {
+              background: linear-gradient(135deg, #2c5aa0, #1a73e8);
+              color: white;
+              padding: 15px 0;
+              text-align: center;
+              margin: 0 -40px 30px -40px;
+              font-size: 18px;
+              font-weight: 600;
+              letter-spacing: 0.5px;
+              text-transform: uppercase;
             }
-            .header-info {
-              text-align: right;
-              font-size: 12px;
-              color: #555;
+            
+            .invoice-details {
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 30px;
+              margin-bottom: 30px;
             }
-            .cliente {
-              margin-bottom: 20px;
+            
+            .detail-section {
+              background: #f8f9fa;
+              padding: 20px;
+              border-radius: 8px;
+              border-left: 4px solid #2c5aa0;
             }
-            table {
-              width: 100%;
-              border-collapse: collapse;
-              margin-bottom: 20px;
+            
+            .detail-section h3 {
+              margin: 0 0 15px 0;
+              color: #2c5aa0;
+              font-size: 14px;
+              font-weight: 600;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+            }
+            
+            .detail-item {
+              margin-bottom: 8px;
               font-size: 13px;
             }
-            th, td {
-              border: 1px solid #ddd;
-              padding: 8px;
-              text-align: left;
+            
+            .detail-label {
+              color: #6c757d;
+              font-weight: 500;
+              display: inline-block;
+              min-width: 80px;
             }
-            th {
-              background-color: #f4f4f4;
+            
+            .detail-value {
+              color: #2c3e50;
+              font-weight: 600;
             }
-            .total {
-              text-align: right;
-              font-size: 1.2em;
-              font-weight: bold;
-              margin-top: 20px;
-            }
-            .observacoes {
-              margin-top: 30px;
-              padding: 10px;
-              background: #f9f9f9;
-              border-left: 4px solid #1a73e8;
+            
+            .items-table {
+              width: 100%;
+              border-collapse: collapse;
+              margin: 30px 0;
               font-size: 12px;
+              border-radius: 8px;
+              overflow: hidden;
+              box-shadow: 0 2px 10px rgba(0,0,0,0.05);
             }
-            footer {
-              position: fixed;
-              bottom: 20px;
-              left: 0;
-              right: 0;
+            
+            .items-table th {
+              background: linear-gradient(135deg, #34495e, #2c3e50);
+              color: white;
+              padding: 15px 12px;
+              text-align: left;
+              font-weight: 600;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+              font-size: 11px;
+            }
+            
+            .items-table td {
+              padding: 12px;
+              border-bottom: 1px solid #e9ecef;
+              background: white;
+            }
+            
+            .items-table tr:nth-child(even) td {
+              background: #f8f9fa;
+            }
+            
+            .text-right {
+              text-align: right;
+            }
+            
+            .text-center {
               text-align: center;
-              font-size: 0.8em;
-              color: #777;
+            }
+            
+            .currency {
+              font-family: 'Courier New', monospace;
+              font-weight: 600;
+            }
+            
+            .total-section {
+              background: #f8f9fa;
+              padding: 20px;
+              border-radius: 8px;
+              margin-top: 20px;
+              border: 2px solid #e9ecef;
+            }
+            
+            .total-row {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              margin-bottom: 10px;
+              font-size: 14px;
+            }
+            
+            .total-final {
+              background: linear-gradient(135deg, #2c5aa0, #1a73e8);
+              color: white;
+              padding: 15px 20px;
+              border-radius: 8px;
+              margin-top: 15px;
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              font-size: 18px;
+              font-weight: 700;
+            }
+            
+            .observacoes {
+              margin-top: 40px;
+              padding: 20px;
+              background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+              border-left: 5px solid #f39c12;
+              border-radius: 0 8px 8px 0;
+              font-size: 12px;
+              line-height: 1.5;
+            }
+            
+            .observacoes h4 {
+              margin: 0 0 10px 0;
+              color: #d68910;
+              font-weight: 600;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+            }
+            
+            footer {
+              margin-top: 60px;
+              padding-top: 20px;
+              border-top: 2px solid #e9ecef;
+              text-align: center;
+              color: #6c757d;
+              font-size: 11px;
+            }
+            
+            .footer-company {
+              font-weight: 600;
+              color: #2c5aa0;
+              margin-bottom: 5px;
+            }
+            
+            .watermark {
+              position: absolute;
+              top: 50%;
+              left: 50%;
+              transform: translate(-50%, -50%) rotate(-45deg);
+              font-size: 120px;
+              color: rgba(44, 90, 160, 0.03);
+              font-weight: 900;
+              z-index: 0;
+              pointer-events: none;
+            }
+            
+            .content-wrapper {
+              position: relative;
+              z-index: 1;
             }
           </style>
         </head>
         <body>
-          <header>
-            ${logoBase64 ? `<img src="${logoBase64}" alt="Logo" />` : ''}
-            <div>
-              <h1>RCS - Pré-Fatura</h1>
-              <div class="header-info">
-                Número: ${data.numero}<br/>
-                Data: ${new Date().toLocaleDateString('pt-AO')}
+          <div class="document">
+            <div class="watermark">PRÉ-FATURA</div>
+            <div class="content-wrapper">
+              <div class="content">
+                <header>
+                  <div class="company-info">
+                    <div class="company-name">RCS</div>
+                    <div class="company-details">
+                      Rua da Tecnologia, 123<br/>
+                      Luanda, Angola<br/>
+                      Tel: +244 923 456 789<br/>
+                      Email: geral@rcs.ao
+                    </div>
+                  </div>
+                  <div class="logo-section">
+                    ${logoBase64 ? `<img src="${logoBase64}" alt="Logo" />` : 'RCS'}
+                  </div>
+                </header>
+
+                <div class="document-title">Pré-Fatura</div>
+
+                <div class="invoice-details">
+                  <div class="detail-section">
+                    <h3>Detalhes da Fatura</h3>
+                    <div class="detail-item">
+                      <span class="detail-label">Número:</span>
+                      <span class="detail-value">${data.numero}</span>
+                    </div>
+                    <div class="detail-item">
+                      <span class="detail-label">Data:</span>
+                      <span class="detail-value">${new Date().toLocaleDateString('pt-AO')}</span>
+                    </div>
+                    <div class="detail-item">
+                      <span class="detail-label">Validade:</span>
+                      <span class="detail-value">30 dias</span>
+                    </div>
+                  </div>
+                  
+                  <div class="detail-section">
+                    <h3>Informações do Cliente</h3>
+                    <div class="detail-item">
+                      <span class="detail-label">Nome:</span>
+                      <span class="detail-value">${data.cliente.nome}</span>
+                    </div>
+                    <div class="detail-item">
+                      <span class="detail-label">E-mail:</span>
+                      <span class="detail-value">${data.cliente.email}</span>
+                    </div>
+                    ${
+                      data.cliente.nif
+                        ? `
+                    <div class="detail-item">
+                      <span class="detail-label">NIF:</span>
+                      <span class="detail-value">${data.cliente.nif}</span>
+                    </div>
+                    `
+                        : ''
+                    }
+                  </div>
+                </div>
+
+                <table class="items-table">
+                  <thead>
+                    <tr>
+                      <th style="width: 50%">Descrição</th>
+                      <th style="width: 10%" class="text-center">Qtd</th>
+                      <th style="width: 20%" class="text-right">Preço Unit.</th>
+                      <th style="width: 20%" class="text-right">Subtotal</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${data.itens
+                      .map(
+                        (item) => `
+                      <tr>
+                        <td>
+                          <strong>${item.descricao}</strong>
+                          ${item.detalhes ? `<br/><small style="color: #6c757d;">${item.detalhes}</small>` : ''}
+                        </td>
+                        <td class="text-center">${item.quantidade}</td>
+                        <td class="text-right currency">${item.precoUnit.toLocaleString('pt-AO')} Kz</td>
+                        <td class="text-right currency">${(item.quantidade * item.precoUnit).toLocaleString('pt-AO')} Kz</td>
+                      </tr>
+                    `,
+                      )
+                      .join('')}
+                  </tbody>
+                </table>
+
+                <div class="total-section">
+                  <div class="total-row">
+                    <span>Subtotal:</span>
+                    <span class="currency">${subtotal.toLocaleString('pt-AO')} Kz</span>
+                  </div>
+                  <div class="total-row">
+                    <span>IVA (0%):</span>
+                    <span class="currency">${iva.toLocaleString('pt-AO')} Kz</span>
+                  </div>
+                  <div class="total-final">
+                    <span>TOTAL GERAL:</span>
+                    <span class="currency">${data.total.toLocaleString('pt-AO')} Kz</span>
+                  </div>
+                </div>
+
+                ${
+                  data.observacoes
+                    ? `<div class="observacoes">
+                        <h4>Termos e Condições</h4>
+                        ${data.observacoes}
+                      </div>`
+                    : `<div class="observacoes">
+                        <h4>Termos e Condições</h4>
+                        • Pagamento em 30 dias após aprovação da pré-fatura<br/>
+                        • Projeto inclui 3 meses de suporte técnico gratuito<br/>
+                        • Valores expressos em Kwanzas angolanos (AOA)<br/>
+                        • Proposta válida por 30 dias a partir da data de emissão<br/>
+                        • Início dos trabalhos mediante confirmação e 50% de sinal
+                      </div>`
+                }
+
+                <footer>
+                  <div class="footer-company">RCS - Soluções Tecnológicas</div>
+                  <div>Obrigado pela confiança em nossos serviços</div>
+                  <div style="margin-top: 10px; font-size: 10px;">
+                    Este documento é uma pré-fatura e não possui valor fiscal
+                  </div>
+                </footer>
               </div>
             </div>
-          </header>
-
-          <div class="cliente">
-            <strong>Cliente:</strong> ${data.cliente.nome}<br/>
-            <strong>E-mail:</strong> ${data.cliente.email}
           </div>
-
-          <table>
-            <thead>
-              <tr>
-                <th>Descrição</th>
-                <th>Qtd</th>
-                <th>Preço Unit.</th>
-                <th>Subtotal</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${data.itens
-                .map(
-                  (item) => `
-                <tr>
-                  <td>${item.descricao}</td>
-                  <td>${item.quantidade}</td>
-                  <td>${item.precoUnit.toLocaleString()} Kz</td>
-                  <td>${(item.quantidade * item.precoUnit).toLocaleString()} Kz</td>
-                </tr>
-              `,
-                )
-                .join('')}
-            </tbody>
-          </table>
-
-          <div class="total">Total: ${data.total.toLocaleString()} Kz</div>
-
-          ${
-            data.observacoes
-              ? `<div class="observacoes"><strong>Observações:</strong><br/>${data.observacoes}</div>`
-              : ''
-          }
-
-          <footer>
-            Obrigado pela preferência! - RCS <br/>
-            Página <span class="pageNumber"></span> de <span class="totalPages"></span>
-          </footer>
         </body>
       </html>
     `;
 
     const browser = await puppeteer.launch({
       headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox'],
     });
+
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: 'networkidle0' });
+
     await page.pdf({
       path: filePath,
       format: 'A4',
@@ -173,15 +445,64 @@ export class PdfService {
       displayHeaderFooter: true,
       headerTemplate: '<span></span>',
       footerTemplate: `
-        <div style="font-size:10px; width:100%; text-align:center; color:#555;">
+        <div style="font-size:10px; width:100%; text-align:center; color:#6c757d; margin-top: 10px;">
           Página <span class="pageNumber"></span> de <span class="totalPages"></span>
         </div>
       `,
-      margin: { top: '100px', bottom: '80px' },
+      margin: {
+        top: '60px',
+        bottom: '80px',
+        left: '40px',
+        right: '40px',
+      },
     });
+
     await browser.close();
 
-    this.logger.log(`Pré-fatura gerada em HTML/PDF: ${filePath}`);
+    this.logger.log(`Pré-fatura profissional gerada: ${filePath}`);
     return filePath;
+  }
+
+  // Método auxiliar para gerar dados de exemplo
+  async generateSamplePreInvoice(): Promise<string> {
+    const sampleData = {
+      numero: `PF-${new Date().getFullYear()}-${String(Date.now()).slice(-3)}`,
+      cliente: {
+        nome: 'Empresa XYZ Ltda',
+        email: 'financeiro@empresaxyz.ao',
+        nif: '5417685478',
+      },
+      itens: [
+        {
+          descricao: 'Consultoria em Tecnologia',
+          detalhes: 'Análise e otimização de sistemas',
+          quantidade: 10,
+          precoUnit: 15000,
+        },
+        {
+          descricao: 'Desenvolvimento de Sistema',
+          detalhes: 'Sistema de gestão personalizado',
+          quantidade: 1,
+          precoUnit: 250000,
+        },
+        {
+          descricao: 'Manutenção Mensal',
+          detalhes: 'Suporte técnico e atualizações',
+          quantidade: 3,
+          precoUnit: 20000,
+        },
+        {
+          descricao: 'Hospedagem Cloud',
+          detalhes: 'Servidor dedicado e backup',
+          quantidade: 12,
+          precoUnit: 5000,
+        },
+      ],
+      total: 520000,
+      observacoes:
+        '• Pagamento em 30 dias após aprovação da pré-fatura<br/>• Projeto inclui 3 meses de suporte técnico gratuito<br/>• Valores expressos em Kwanzas angolanos (AOA)<br/>• Proposta válida por 30 dias a partir da data de emissão<br/>• Início dos trabalhos mediante confirmação e 50% de sinal',
+    };
+
+    return this.generatePreInvoice(sampleData);
   }
 }
