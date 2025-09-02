@@ -120,9 +120,13 @@ Responda educadamente informando:
         headers: { 'Content-Type': 'application/json' },
       });
 
-      const { isvalide, revisao, conteudo } = response.data;
+      this.logger.debug(
+        'Resposta da IA (bruta): ' + JSON.stringify(response.data, null, 2),
+      );
 
-      if (!isvalide) {
+      const data = response.data;
+
+      if (!data.isvalide) {
         return {
           isvalide: false,
           cliente: dados.nome,
@@ -137,38 +141,46 @@ Responda educadamente informando:
           total: 0,
           revisao: false,
           observacoes:
+            data.observacoes ||
             'Não conseguimos identificar os produtos desejados. Por favor, envie mais detalhes.',
         };
       }
 
-      const precoExtraido = this.extractPreco(conteudo.resposta_email.corpo);
+      // Caso a IA retorne dentro de "conteudo"
+      const conteudo = data.conteudo || data;
 
-      const itens = [
-        {
-          descricao: conteudo.produto,
-          quantidade: 1,
-          precoUnit: precoExtraido,
-        },
-      ];
+      const itens =
+        conteudo.itens ||
+        (conteudo.produto
+          ? [
+              {
+                descricao: conteudo.produto,
+                quantidade: conteudo.quantidade || 1,
+                precoUnit:
+                  conteudo.precoUnit ||
+                  this.extractPreco(conteudo.resposta_email?.corpo || ''),
+              },
+            ]
+          : []);
 
-      const total = itens.reduce(
-        (acc, it) => acc + it.quantidade * it.precoUnit,
-        0,
-      );
+      const total =
+        conteudo.total ||
+        itens.reduce((acc, it) => acc + it.quantidade * it.precoUnit, 0);
 
-      let precisaRevisao = revisao;
+      let precisaRevisao = data.revisao ?? false;
       if (total <= 2_000_000) {
         precisaRevisao = false;
       }
 
       return {
         isvalide: true,
-        cliente: conteudo.nome,
-        email: conteudo.email_cliente,
+        cliente: conteudo.nome || dados.nome,
+        email: conteudo.email_cliente || dados.email,
         itens,
         total,
         revisao: precisaRevisao,
-        observacoes: conteudo.resposta_email?.corpo || '',
+        observacoes:
+          conteudo.resposta_email?.corpo || conteudo.observacoes || '',
       };
     } catch (err) {
       this.logger.error(
