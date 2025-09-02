@@ -76,12 +76,15 @@ export class PdfService {
       align: 'right',
     });
 
-    // Observações
     if (data.observacoes) {
       doc.moveDown(2);
       doc.fontSize(12).text('Observações:', { underline: true });
       doc.moveDown(0.5);
-      doc.fontSize(11).text(data.observacoes, { align: 'left' });
+
+      doc.fontSize(11).text(data.observacoes, {
+        align: 'left',
+        width: doc.page.width - doc.page.margins.left - doc.page.margins.right,
+      });
     }
 
     // Rodapé

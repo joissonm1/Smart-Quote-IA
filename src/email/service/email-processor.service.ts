@@ -124,12 +124,18 @@ export class EmailProcessorService {
         0,
       );
 
+      // 🔹 Força a regra: só vai para revisão se total > 2M
+      let precisaRevisao = revisao;
+      if (total <= 2_000_000) {
+        precisaRevisao = false;
+      }
+
       return {
         cliente: conteudo.nome,
         email: conteudo.email_cliente,
         itens,
         total,
-        revisao,
+        revisao: precisaRevisao,
         observacoes: conteudo.resposta_email?.corpo || '',
       };
     } catch (err) {
@@ -157,11 +163,22 @@ export class EmailProcessorService {
 
   private extractPreco(texto: string): number {
     if (!texto) return 0;
-    const match = texto.match(/([\d\.]+)\s*Kz/i);
-    if (match) {
-      return Number(match[1].replace(/\./g, '')) || 0;
+
+    const idx = texto.toLowerCase().indexOf('kz');
+    if (idx === -1) return 0;
+
+    const parte = texto.substring(Math.max(0, idx - 20), idx).trim();
+
+    let valorStr = parte.replace(/[^\d\.,]/g, '');
+    if (valorStr.includes(',') && valorStr.includes('.')) {
+      valorStr = valorStr.replace(/\./g, '');
+      valorStr = valorStr.replace(',', '.');
+    } else if (valorStr.includes(',')) {
+      valorStr = valorStr.replace(',', '.');
     }
-    return 0;
+
+    const valor = Number(valorStr);
+    return isNaN(valor) ? 0 : valor;
   }
 
   private messageEmail(
