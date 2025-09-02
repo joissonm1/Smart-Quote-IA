@@ -38,8 +38,16 @@ export class EmailProcessorService {
 
     const email = job.email;
 
+    let mensagem = email.descricao || '';
+    if (!mensagem.trim()) {
+      mensagem = `O cliente "${email.cliente?.nome || 'Cliente'}" entrou em contato, 
+mas não descreveu nenhum produto ou quantidade. 
+Responda educadamente informando: 
+"Prezado cliente, não conseguimos identificar os produtos desejados. Por favor, envie mais detalhes."`;
+    }
+
     const jsonBase = {
-      mensagem: email.descricao || '',
+      mensagem,
       nome: email.cliente?.nome || 'Cliente',
       email: email.cliente?.email || '',
       anexo_conteudo: Array.isArray(email.anexos)
@@ -106,7 +114,21 @@ export class EmailProcessorService {
       const { isvalide, revisao, conteudo } = response.data;
 
       if (!isvalide) {
-        throw new Error('IA retornou isvalide=false');
+        return {
+          cliente: dados.nome,
+          email: dados.email,
+          itens: [
+            {
+              descricao: 'Nenhum produto identificado',
+              quantidade: 0,
+              precoUnit: 0,
+            },
+          ],
+          total: 0,
+          revisao: false,
+          observacoes:
+            'Prezado cliente, não conseguimos identificar os produtos desejados. Por favor, envie mais detalhes.',
+        };
       }
 
       const precoExtraido = this.extractPreco(conteudo.resposta_email.corpo);
@@ -124,7 +146,6 @@ export class EmailProcessorService {
         0,
       );
 
-      // 🔹 Força a regra: só vai para revisão se total > 2M
       let precisaRevisao = revisao;
       if (total <= 2_000_000) {
         precisaRevisao = false;
@@ -150,13 +171,14 @@ export class EmailProcessorService {
         itens: [
           {
             descricao: 'Produto não identificado',
-            quantidade: 1,
+            quantidade: 0,
             precoUnit: 0,
           },
         ],
         total: 0,
-        revisao: true,
-        observacoes: 'Erro ao processar IA. Gerado fallback.',
+        revisao: false,
+        observacoes:
+          'Prezado cliente, não conseguimos identificar os produtos desejados. Por favor, envie mais detalhes.',
       };
     }
   }
@@ -182,7 +204,12 @@ export class EmailProcessorService {
   }
 
   private messageEmail(
-    cotacao: { cliente: string; total: number; itens: any[] },
+    cotacao: {
+      cliente: string;
+      total: number;
+      itens: any[];
+      observacoes: string;
+    },
     foiParaSupervisor: boolean,
     numero: string,
   ) {
@@ -196,6 +223,17 @@ export class EmailProcessorService {
         `Número da pré-fatura: ${numero}`,
         ``,
         `O documento em anexo contém todos os detalhes.`,
+        ``,
+        `Atenciosamente,`,
+        `Equipe RCS`,
+      ].join('\n');
+    }
+
+    if (!cotacao.itens || cotacao.itens.length === 0 || cotacao.total === 0) {
+      return [
+        `Prezado(a) ${cotacao.cliente},`,
+        ``,
+        cotacao.observacoes,
         ``,
         `Atenciosamente,`,
         `Equipe RCS`,
