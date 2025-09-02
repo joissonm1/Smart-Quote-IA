@@ -24,7 +24,6 @@ export class PdfService {
 
     const filePath = path.join(uploadsDir, `pre-fatura-${data.numero}.pdf`);
 
-    // 🔹 Caminho do logo
     const logoPath = path.join(__dirname, '../../assets/logo.png');
     let logoBase64 = '';
     if (fs.existsSync(logoPath)) {
@@ -32,7 +31,6 @@ export class PdfService {
       logoBase64 = `data:image/png;base64,${logoBuffer.toString('base64')}`;
     }
 
-    // 🔹 HTML estilizado
     const html = `
       <html lang="pt">
         <head>
@@ -163,9 +161,8 @@ export class PdfService {
       </html>
     `;
 
-    // 🔹 Gera PDF com puppeteer
     const browser = await puppeteer.launch({
-      headless: true, // ✅ corrigido
+      headless: true,
     });
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: 'networkidle0' });
