@@ -73,24 +73,27 @@ Responda educadamente informando:
     this.logger.log(`Cotação salva no banco com id=${saved.id}`);
 
     const numero = `${Date.now()}`;
+    let pdfPath: string | null = null;
 
-    const pdfPath = await this.pdfService.generatePreInvoice({
-      numero,
-      cliente: { nome: cotacao.cliente, email: cotacao.email },
-      itens: cotacao.itens,
-      total: cotacao.total,
-      observacoes: cotacao.observacoes,
-    });
+    // Só gera PDF quando há pedido real
+    if (cotacao.itens?.some((it) => it.quantidade > 0 && it.precoUnit > 0)) {
+      pdfPath = await this.pdfService.generatePreInvoice({
+        numero,
+        cliente: { nome: cotacao.cliente, email: cotacao.email },
+        itens: cotacao.itens,
+        total: cotacao.total,
+        observacoes: cotacao.observacoes,
+      });
+    }
 
     const enviarPara = cotacao.revisao ? this.SUPERVISOR_EMAIL : cotacao.email;
-
     const corpo = this.messageEmail(cotacao, cotacao.revisao, numero);
 
     await this.mailer.sendPreInvoice({
       para: enviarPara,
       assunto: `Pré-Fatura RCS #${numero}`,
       corpoTexto: corpo,
-      anexoPdfPath: pdfPath,
+      anexoPdfPath: pdfPath || undefined, // só anexa se existir
     });
 
     this.emailQueue.MarkAsProcessed(job.id);
@@ -117,13 +120,7 @@ Responda educadamente informando:
         return {
           cliente: dados.nome,
           email: dados.email,
-          itens: [
-            {
-              descricao: 'Nenhum produto identificado',
-              quantidade: 0,
-              precoUnit: 0,
-            },
-          ],
+          itens: [],
           total: 0,
           revisao: false,
           observacoes:
@@ -168,13 +165,7 @@ Responda educadamente informando:
       return {
         cliente: dados.nome,
         email: dados.email,
-        itens: [
-          {
-            descricao: 'Produto não identificado',
-            quantidade: 0,
-            precoUnit: 0,
-          },
-        ],
+        itens: [],
         total: 0,
         revisao: false,
         observacoes:
