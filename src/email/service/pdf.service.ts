@@ -1,141 +1,101 @@
 import { Injectable, Logger } from '@nestjs/common';
+import PDFDocument from 'pdfkit';
 import * as fs from 'fs';
 import * as path from 'path';
-import PDFDocument from 'pdfkit';
 
 @Injectable()
 export class PdfService {
   private readonly logger = new Logger(PdfService.name);
 
-  private invoicesDir = path.join(__dirname, '..', '..', 'uploads', 'invoices');
-
-  constructor() {
-    if (!fs.existsSync(this.invoicesDir)) {
-      fs.mkdirSync(this.invoicesDir, { recursive: true });
-      this.logger.log(`Pasta criada: ${this.invoicesDir}`);
-    }
-  }
-
-  async generatePreInvoice(dados: {
+  async generatePreInvoice(data: {
     numero: string;
     cliente: { nome: string; email: string };
-    itens: Array<{ descricao: string; quantidade: number; precoUnit: number }>;
+    itens: { descricao: string; quantidade: number; precoUnit: number }[];
     total: number;
     observacoes?: string;
   }): Promise<string> {
-    this.cleanOldPdfs();
-    const filePath = path.join(
-      this.invoicesDir,
-      `prefatura-${dados.numero}.pdf`,
-    );
+    const uploadsDir = path.join(__dirname, '../../uploads/invoices');
+    if (fs.existsSync(uploadsDir)) {
+      fs.rmSync(uploadsDir, { recursive: true, force: true });
+      this.logger.log(`Pasta removida: ${uploadsDir}`);
+    }
+    fs.mkdirSync(uploadsDir, { recursive: true });
+    this.logger.log(`Pasta recriada: ${uploadsDir}`);
 
-    const doc = new PDFDocument({ size: 'A4', margin: 50 });
+    const filePath = path.join(uploadsDir, `pre-fatura-${data.numero}.pdf`);
+    const doc = new PDFDocument({ margin: 50 });
+
     const stream = fs.createWriteStream(filePath);
     doc.pipe(stream);
 
-    let pageNumber = 1;
-    doc.on('pageAdded', () => {
-      pageNumber++;
-    });
+    // Cabeçalho
+    doc.fontSize(18).text('RCS - Pré-Fatura', { align: 'center' }).moveDown();
 
-    try {
-      doc.image(
-        path.join(__dirname, '..', '..', 'assets', 'logo.png'),
-        50,
-        40,
-        { width: 100 },
-      );
-    } catch (e) {
-      this.logger.warn('Logo não encontrado, pulando...');
-    }
+    doc
+      .fontSize(12)
+      .text(`Número: ${data.numero}`, { align: 'right' })
+      .text(`Data: ${new Date().toLocaleDateString('pt-AO')}`, {
+        align: 'right',
+      })
+      .moveDown();
 
-    doc.fontSize(20).text('RCS - Pré-Fatura', 200, 50, { align: 'right' });
-    doc.fontSize(10).text(`Nº: ${dados.numero}`, 200, 80, { align: 'right' });
-    doc.text(`Data: ${new Date().toLocaleDateString()}`, 200, 95, {
-      align: 'right',
-    });
+    // Dados do cliente
+    doc
+      .fontSize(12)
+      .text(`Cliente: ${data.cliente.nome}`)
+      .text(`E-mail: ${data.cliente.email}`)
+      .moveDown();
 
-    doc.moveDown(3);
-
-    doc.fontSize(12).text('Dados do Cliente', { underline: true });
-    doc.fontSize(10).text(`Nome: ${dados.cliente.nome}`);
-    doc.text(`Email: ${dados.cliente.email}`);
-    doc.moveDown();
-
-    doc.fontSize(12).text('Itens', { underline: true });
+    // Tabela de itens
+    doc.fontSize(12).text('Itens da Pré-Fatura:', { underline: true });
     doc.moveDown(0.5);
 
     const tableTop = doc.y;
-    const col1 = 50,
-      col2 = 300,
-      col3 = 380,
-      col4 = 470;
+    const itemSpacing = 20;
 
-    doc
-      .rect(col1 - 5, tableTop - 5, 500, 20)
-      .fill('#eeeeee')
-      .stroke();
-    doc.fillColor('black').fontSize(10).text('Descrição', col1, tableTop);
-    doc.text('Qtd', col2, tableTop);
-    doc.text('Preço Unit.', col3, tableTop);
-    doc.text('Subtotal', col4, tableTop);
+    doc.text('Descrição', 50, tableTop);
+    doc.text('Qtd', 250, tableTop);
+    doc.text('Preço Unit.', 300, tableTop);
+    doc.text('Subtotal', 420, tableTop);
 
-    doc.moveDown(1);
+    let y = tableTop + 20;
+    data.itens.forEach((item) => {
+      const subtotal = item.quantidade * item.precoUnit;
 
-    dados.itens.forEach((it) => {
-      const subtotal = it.quantidade * it.precoUnit;
-      doc.fontSize(10).text(it.descricao, col1, doc.y);
-      doc.text(String(it.quantidade), col2, doc.y);
-      doc.text(`${it.precoUnit.toLocaleString()} Kz`, col3, doc.y);
-      doc.text(`${subtotal.toLocaleString()} Kz`, col4, doc.y);
-      doc.moveDown(0.5);
+      doc.text(item.descricao, 50, y, { width: 180 });
+      doc.text(item.quantidade.toString(), 250, y);
+      doc.text(`${item.precoUnit.toLocaleString()} Kz`, 300, y);
+      doc.text(`${subtotal.toLocaleString()} Kz`, 420, y);
+
+      y += itemSpacing;
     });
 
-    doc.moveDown(1);
+    // Total
+    doc.moveDown(2);
+    doc.fontSize(14).text(`Total: ${data.total.toLocaleString()} Kz`, {
+      align: 'right',
+    });
 
-    doc.moveTo(col1, doc.y).lineTo(550, doc.y).stroke();
-
-    doc.moveDown(0.5);
-    doc
-      .fontSize(12)
-      .font('Helvetica-Bold')
-      .text(`Total: ${dados.total.toLocaleString()} Kz`, { align: 'right' });
-
-    doc.font('Helvetica').moveDown();
-
-    if (dados.observacoes) {
-      doc.fontSize(10).text(`Obs: ${dados.observacoes}`, { align: 'left' });
+    // Observações
+    if (data.observacoes) {
+      doc.moveDown(2);
+      doc.fontSize(12).text('Observações:', { underline: true });
+      doc.moveDown(0.5);
+      doc.fontSize(11).text(data.observacoes, { align: 'left' });
     }
 
+    // Rodapé
     doc.moveDown(3);
-    doc.fontSize(8).text('Obrigado pela preferência!', {
-      align: 'center',
-    });
-
-    doc.text(`Página ${pageNumber}`, 0, doc.page.height - 50, {
-      align: 'center',
-      width: doc.page.width,
-    });
+    doc.fontSize(10).text('Obrigado pela preferência!', { align: 'center' });
+    doc.text(`Página 1 de 1`, 0, doc.page.height - 50, { align: 'center' });
 
     doc.end();
 
-    await new Promise<void>((resolve, reject) => {
-      stream.on('finish', () => resolve());
-      stream.on('error', reject);
+    return new Promise((resolve) => {
+      stream.on('finish', () => {
+        this.logger.log(`Pré-fatura gerada: ${filePath}`);
+        resolve(filePath);
+      });
     });
-
-    return filePath;
-  }
-
-  cleanOldPdfs() {
-    if (!fs.existsSync(this.invoicesDir)) return;
-    try {
-      fs.rmSync(this.invoicesDir, { recursive: true, force: true });
-      this.logger.log(`Pasta removida: ${this.invoicesDir}`);
-      fs.mkdirSync(this.invoicesDir, { recursive: true });
-      this.logger.log(`Pasta recriada: ${this.invoicesDir}`);
-    } catch (err) {
-      this.logger.error(`Erro ao limpar diretório: ${(err as Error).message}`);
-    }
   }
 }

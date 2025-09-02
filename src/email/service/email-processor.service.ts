@@ -76,7 +76,7 @@ export class EmailProcessorService {
 
     const enviarPara = cotacao.revisao ? this.SUPERVISOR_EMAIL : cotacao.email;
 
-    const corpo = this.messageEmail(cotacao, cotacao.revisao);
+    const corpo = this.messageEmail(cotacao, cotacao.revisao, numero);
 
     await this.mailer.sendPreInvoice({
       para: enviarPara,
@@ -165,8 +165,9 @@ export class EmailProcessorService {
   }
 
   private messageEmail(
-    cotacao: { cliente: string; total: number },
+    cotacao: { cliente: string; total: number; itens: any[] },
     foiParaSupervisor: boolean,
+    numero: string,
   ) {
     if (foiParaSupervisor) {
       return [
@@ -175,21 +176,33 @@ export class EmailProcessorService {
         `A pré-fatura do cliente **${cotacao.cliente}** foi gerada e requer a sua revisão antes do envio.`,
         ``,
         `Valor total: ${cotacao.total.toLocaleString()} Kzs`,
-        `O documento em anexo contém todos os detalhes.`,
+        `Número da pré-fatura: ${numero}`,
         ``,
-        `Por favor, analise e, se estiver correto, encaminhe ao cliente.`,
+        `O documento em anexo contém todos os detalhes.`,
         ``,
         `Atenciosamente,`,
         `Equipe RCS`,
       ].join('\n');
     }
 
+    const listaItens = cotacao.itens
+      .map(
+        (it) =>
+          `- ${it.descricao} — ${it.quantidade} un — ${it.precoUnit.toLocaleString()} Kz`,
+      )
+      .join('\n');
+
     return [
       `Prezado(a) ${cotacao.cliente},`,
       ``,
-      `Recebemos sua solicitação e geramos uma pré-fatura com base nas informações fornecidas.`,
+      `Recebemos sua solicitação e geramos a pré-fatura #${numero} com base nas informações fornecidas.`,
       ``,
-      `O documento em anexo contém todos os detalhes da sua cotação.`,
+      `Itens incluídos:`,
+      listaItens,
+      ``,
+      `Valor total: ${cotacao.total.toLocaleString()} Kz`,
+      ``,
+      `O documento em anexo contém todos os detalhes da sua pré-fatura.`,
       ``,
       `Caso haja necessidade de ajustes, basta responder a este e-mail.`,
       ``,
