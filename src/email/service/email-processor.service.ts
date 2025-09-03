@@ -44,7 +44,7 @@ export class EmailProcessorService {
     );
   }
 
-  @Cron('0 */1 * * * *')
+  @Cron('*/10 * * * * *')
   async processQueue() {
     try {
       if (!this.emailQueue.haveEmails()) return;
@@ -185,7 +185,8 @@ Responda educadamente informando que precisa de mais detalhes sobre os produtos 
 
     const conteudo = data.conteudo || data;
     const itens = this.extractItems(conteudo);
-    const total = conteudo.total || this.calculateTotal(itens);
+    const total =
+      conteudo.valor_final || conteudo.total || this.calculateTotal(itens);
     const precisaRevisao = this.shouldRequireRevision(data.revisao, total);
 
     return {
@@ -202,6 +203,14 @@ Responda educadamente informando que precisa de mais detalhes sobre os produtos 
   private extractItems(conteudo: any): any[] {
     if (conteudo.itens && Array.isArray(conteudo.itens)) {
       return conteudo.itens;
+    }
+
+    if (conteudo.produtos && Array.isArray(conteudo.produtos)) {
+      return conteudo.produtos.map((p: any) => ({
+        descricao: p.nome || p.descricao || 'Item sem nome',
+        quantidade: p.quantidade || 1,
+        precoUnit: p.preco_unitario || p.precoUnit || 0,
+      }));
     }
 
     if (conteudo.produto) {

@@ -8,17 +8,17 @@ import axios from 'axios';
 export class FormsService {
   private readonly logger = new Logger(FormsService.name);
 
-  private SUPERVISOR_EMAIL =
-    process.env.SUPERVISOR_EMAIL || 'joissonm.miguel@gmail.com';
-  private IA_ENDPOINT =
-    process.env.IA_ENDPOINT ||
-    'https://smartquote-iom8.onrender.com/processar-requisicao';
+  private SUPERVISOR_EMAIL = process.env.SUPERVISOR_EMAIL!;
+  private IA_ENDPOINT = process.env.IA_ENDPOINT!;
+  private readonly REVISION_THRESHOLD: number;
 
   constructor(
     private prisma: PrismaService,
     private pdfService: PdfService,
     private mailerService: MailerService,
-  ) {}
+  ) {
+    this.REVISION_THRESHOLD = parseInt(process.env.REVISION_THRESHOLD!);
+  }
 
   async createFormSubmission(data: {
     requester: string;
@@ -171,10 +171,8 @@ export class FormsService {
         conteudo.total ||
         itens.reduce((acc, it) => acc + it.quantidade * it.precoUnit, 0);
 
-      let precisaRevisao = data.revisao ?? false;
-      if (total <= 2_000_000) {
-        precisaRevisao = false;
-      }
+      const precisaRevisao =
+        data.revisao === true || total > this.REVISION_THRESHOLD;
 
       return {
         isvalide: true,

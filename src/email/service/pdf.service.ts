@@ -1,7 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import * as path from 'path';
 import * as fs from 'fs';
-import * as puppeteer from 'puppeteer';
+import puppeteer from 'puppeteer-core';
+import chromium from '@sparticuz/chromium';
 
 @Injectable()
 export class PdfService {
@@ -316,8 +317,7 @@ export class PdfService {
                     <div class="company-name">RCS</div>
                     <div class="company-details">
                       Luanda, Angola<br/>
-                      Tel: +244 923 456 789<br/>
-                      Email: geral@rcs.ao
+                      Call Center: +244 932 896 190<br/>
                     </div>
                   </div>
                   <div class="logo-section">
@@ -413,7 +413,7 @@ export class PdfService {
                 ${
                   data.observacoes
                     ? `<div class="observacoes">
-                        <h4>Termos e Condições</h4>
+                        <h4>Observações</h4>
                         ${data.observacoes}
                       </div>`
                     : `<div class="observacoes">
@@ -444,17 +444,10 @@ export class PdfService {
 
     try {
       browser = await puppeteer.launch({
+        args: chromium.args,
+        defaultViewport: null,
+        executablePath: await chromium.executablePath(),
         headless: true,
-        args: [
-          '--no-sandbox',
-          '--disable-setuid-sandbox',
-          '--disable-dev-shm-usage',
-          '--disable-accelerated-2d-canvas',
-          '--no-first-run',
-          '--no-zygote',
-          '--disable-gpu',
-          '--disable-web-security',
-        ],
       });
 
       const page = await browser.newPage();
@@ -465,7 +458,7 @@ export class PdfService {
         format: 'A4',
         printBackground: true,
         displayHeaderFooter: true,
-        headerTemplate: '<span></span>',
+        headerTemplate: '<div></div>',
         footerTemplate: `
           <div style="font-size:10px; width:100%; text-align:center; color:#6c757d; margin-top: 10px;">
             Página <span class="pageNumber"></span> de <span class="totalPages"></span>
