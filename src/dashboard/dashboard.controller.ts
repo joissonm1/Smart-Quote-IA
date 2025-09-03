@@ -1,54 +1,74 @@
-import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
-import { JwtAuthGuard } from '../login/auth/jwt/jwt-auth.guard';
+import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { DashboardService } from './dashboard.service';
+
+import {
+  ProcessingMetric,
+  QuotationRequestCounts,
+  QuotationTrendData,
+} from './dashboard.interface';
+
+interface ApproveRejectDto {
+  comments?: string;
+}
 
 @Controller('dashboard')
 export class DashboardController {
   constructor(private dashboardService: DashboardService) {}
 
-  //   @UseGuards(JwtAuthGuard)
   @Get('overview')
   async getOverview() {
     return this.dashboardService.getOverview();
   }
 
-  //   @UseGuards(JwtAuthGuard)
   @Get('recent-quotations')
   async getRecentQuotations() {
-    return this.dashboardService.getRecentQuotation();
+    return this.dashboardService.getRecentQuotations();
   }
 
-  //   @UseGuards(JwtAuthGuard)
+  @Get('quotations')
+  async getQuotations() {
+    return this.dashboardService.getQuotations();
+  }
+
   @Get('pending-approvals')
   async getPendingApprovals() {
     return this.dashboardService.getPendingApprovals();
   }
 
-  //   @UseGuards(JwtAuthGuard)
+  // @Post('approvals/:id/approve')
+  // async approveApproval(@Param('id') id: string) {
+  //   return this.dashboardService.approveApproval(id);
+  // }
+  // @Post('approvals/:id/reject')
+  // async rejectApproval(@Param('id') id: string) {
+  //   return this.dashboardService.rejectApproval(id);
+  // }
   @Post('approvals/:id/approve')
-  async approveApproval(@Param('id') id: string) {
-    return this.dashboardService.approveApproval(id);
+  async approveApproval(
+    @Param('id') id: string,
+    @Body() body: ApproveRejectDto,
+  ) {
+    return this.dashboardService.approveApproval(id, body.comments);
   }
 
-  //   @UseGuards(JwtAuthGuard)
   @Post('approvals/:id/reject')
-  async rejectApproval(@Param('id') id: string) {
-    return this.dashboardService.rejectApproval(id);
+  async rejectApproval(
+    @Param('id') id: string,
+    @Body() body: ApproveRejectDto,
+  ) {
+    return this.dashboardService.rejectApproval(id, body.comments);
   }
 
-  //   @UseGuards(JwtAuthGuard)
   @Get('customers')
   async getCustomers() {
     return this.dashboardService.getCustomers();
   }
 
-  //   @UseGuards(JwtAuthGuard)
   @Get('customers/:id')
   async getCustomer(@Param('id') id: string) {
     return this.dashboardService.getCustomer(id);
   }
 
-  //   @UseGuards(JwtAuthGuard)
   @Post('quotations')
   async createQuotation(
     @Body()
@@ -68,15 +88,63 @@ export class DashboardController {
     return this.dashboardService.createQuotation(data);
   }
 
-  //   @UseGuards(JwtAuthGuard)
-  @Get('quotation-requests')
-  async getQuotationRequests() {
-    return this.dashboardService.getQuotationRequests();
+  @Get('quotations/:id')
+  async getQuotation(@Param('id') id: string) {
+    return this.dashboardService.getQuotation(id);
   }
 
-  //   @UseGuards(JwtAuthGuard)
+  // @Get('quotation-requests')
+  // async getQuotationRequests() {
+  //   return this.dashboardService.getQuotationRequests();
+  // }
+  @Get('quotation-requests')
+  async getQuotationRequests(
+    @Query('status') status?: 'PENDING' | 'PROCESSING' | 'REJECTED' | 'ALL',
+    @Query('sortBy') sortBy?: 'recent' | 'oldest' | 'priority',
+    @Query('search') search?: string,
+  ): Promise<QuotationRequestCounts> {
+    return this.dashboardService.getQuotationRequests(status, sortBy, search);
+  }
+
   @Get('suppliers')
   async getSuppliers() {
     return this.dashboardService.getSuppliers();
+  }
+
+  @Get('analytics')
+  async getAnalytics() {
+    return this.dashboardService.getAnalytics();
+  }
+
+  @Get('revenue-trends')
+  async getRevenueTrends(@Query('year') year?: string) {
+    return this.dashboardService.getRevenueTrends(
+      year ? parseInt(year, 10) : undefined,
+    );
+  }
+
+  @Get('quotation-trends')
+  async getQuotationTrends(
+    @Query('year') year?: string,
+  ): Promise<QuotationTrendData[]> {
+    return this.dashboardService.getQuotationTrends(
+      year ? parseInt(year, 10) : undefined,
+    );
+  }
+
+  @Get('processing-metrics')
+  async getProcessingMetrics(
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ): Promise<ProcessingMetric[]> {
+    return this.dashboardService.getProcessingMetrics(
+      startDate ? new Date(startDate) : undefined,
+      endDate ? new Date(endDate) : undefined,
+    );
+  }
+
+  @Post('sync-emails')
+  async syncEmails() {
+    return this.dashboardService.syncEmails();
   }
 }

@@ -50,6 +50,7 @@ model QuotationRequest {
   description String
   status      RequestStatus @default(PENDING)
   createdAt   DateTime      @default(now())
+  processedAt DateTime?
   attachments Attachment[]
   quotations  Quotation[]
 }

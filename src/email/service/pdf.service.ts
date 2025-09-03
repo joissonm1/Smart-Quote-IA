@@ -410,7 +410,6 @@ export class PdfService {
                         • Projeto inclui 3 meses de suporte técnico gratuito<br/>
                         • Valores expressos em Kwanzas angolanos (AOA)<br/>
                         • Proposta válida por 30 dias a partir da data de emissão<br/>
-                        • Início dos trabalhos mediante confirmação e 50% de sinal
                       </div>`
                 }
 
