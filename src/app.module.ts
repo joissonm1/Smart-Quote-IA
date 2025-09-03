@@ -10,6 +10,7 @@ import { EmailModule } from './email/module/email.module';
 import { FormsModule } from './forms/forms.module';
 import { RolesGuard } from './login/auth/roles.guard';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { LogsModule } from './logs/logs.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
     EmailModule,
     FormsModule,
     DashboardModule,
+    LogsModule,
   ],
   providers: [
     {

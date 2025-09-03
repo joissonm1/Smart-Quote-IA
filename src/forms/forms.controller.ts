@@ -13,7 +13,7 @@ export class FormsController {
   ) {}
 
   @Post()
-  // @UsePipes(new ValidateForm())
+  @UsePipes(new ValidateForm())
   @ApiOperation({ summary: 'Submeter um pedido de cotação' })
   @ApiResponse({ status: 201, description: 'Pedido criado com sucesso' })
   @ApiResponse({ status: 400, description: 'Dados inválidos' })

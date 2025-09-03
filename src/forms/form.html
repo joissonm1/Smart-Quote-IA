@@ -532,9 +532,6 @@
         const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
         document.documentElement.setAttribute('data-theme', newTheme);
 
-        // Note: localStorage is not available in this environment
-        // In a real application, you would use: localStorage.setItem('theme', newTheme);
-
         const sunIcon = document.querySelector('.sun-icon');
         const moonIcon = document.querySelector('.moon-icon');
 
@@ -547,8 +544,6 @@
         }
       }
 
-      // Initialize theme (without localStorage)
-      // In a real application, you would load from localStorage
       const savedTheme = 'light'; // Default to light theme
       document.documentElement.setAttribute('data-theme', savedTheme);
 

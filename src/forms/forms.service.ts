@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { PdfService } from '../email/service/pdf.service';
 import { MailerService } from '../email/service/mailer.service';
+import { LogsService } from '../logs/logs.service';
 import axios from 'axios';
 
 @Injectable()
@@ -16,6 +17,7 @@ export class FormsService {
     private prisma: PrismaService,
     private pdfService: PdfService,
     private mailerService: MailerService,
+    private logService: LogsService, // <-- LogsService injetado
   ) {
     this.REVISION_THRESHOLD = parseInt(process.env.REVISION_THRESHOLD!);
   }
@@ -30,6 +32,10 @@ export class FormsService {
       '\n--------------------------------------------------Forms--------------------------------------------------',
     );
     this.logger.log(`Recebendo solicitação de ${data.requester}`);
+    await this.logService.createLog(null, 'FORM_RECEIVED', {
+      requester: data.requester,
+      email: data.email,
+    });
     console.log(
       '\n--------------------------------------------------------------------------------------------------------',
     );
@@ -49,6 +55,9 @@ export class FormsService {
     );
     this.logger.log(`Solicitação criada com ID: ${newRequest.id}`);
     console.log(newRequest);
+    await this.logService.createLog(null, 'FORM_CREATED', {
+      requestId: newRequest.id,
+    });
     console.log(
       '\n--------------------------------------------------------------------------------------------------------',
     );
@@ -65,11 +74,19 @@ export class FormsService {
 
     this.logger.log('=== DADOS ENVIADOS PARA IA ===');
     this.logger.log(JSON.stringify(jsonBase, null, 2));
+    await this.logService.createLog(null, 'FORM_IA_CALL', {
+      requestId: newRequest.id,
+      payload: jsonBase,
+    });
 
     const cotacao = await this.callIA(jsonBase);
 
     this.logger.log('=== RESULTADO IA ===');
     this.logger.log(JSON.stringify(cotacao, null, 2));
+    await this.logService.createLog(null, 'FORM_IA_RESULT', {
+      requestId: newRequest.id,
+      result: cotacao,
+    });
 
     const saved = await this.prisma.quotationGenerated.create({
       data: {
@@ -79,6 +96,10 @@ export class FormsService {
     });
 
     this.logger.log(`Cotação salva no banco com id=${saved.id}`);
+    await this.logService.createLog(null, 'FORM_QUOTATION_SAVED', {
+      requestId: newRequest.id,
+      quotationId: saved.id,
+    });
 
     const numero = `FORM-${Date.now()}`;
     let pdfPath: string | null = null;
@@ -87,14 +108,22 @@ export class FormsService {
     if (!cotacao.isvalide) {
       assunto = `Solicitação não identificada - RCS`;
     } else {
-      pdfPath = await this.pdfService.generatePreInvoice({
-        numero,
-        cliente: { nome: cotacao.cliente, email: cotacao.email },
-        itens: cotacao.itens,
-        total: cotacao.total,
-        observacoes: cotacao.observacoes,
-      });
-      assunto = `Pré-Fatura RCS #${numero}`;
+      try {
+        pdfPath = await this.pdfService.generatePreInvoice({
+          numero,
+          cliente: { nome: cotacao.cliente, email: cotacao.email },
+          itens: cotacao.itens,
+          total: cotacao.total,
+          observacoes: cotacao.observacoes,
+        });
+        assunto = `Pré-Fatura RCS #${numero}`;
+      } catch (err) {
+        this.logger.error(`Erro ao gerar PDF: ${(err as Error).message}`);
+        await this.logService.createLog(null, 'FORM_PDF_ERROR', {
+          requestId: newRequest.id,
+          error: (err as Error).message,
+        });
+      }
     }
 
     const enviarPara = cotacao.revisao ? this.SUPERVISOR_EMAIL : cotacao.email;
@@ -110,6 +139,11 @@ export class FormsService {
     this.logger.log(
       `Fluxo concluído. Total: ${cotacao.total.toLocaleString()} Kz | Destino: ${enviarPara}`,
     );
+    await this.logService.createLog(null, 'FORM_EMAIL_SENT', {
+      requestId: newRequest.id,
+      to: enviarPara,
+      quotationId: numero,
+    });
 
     return { ...newRequest, cotacao };
   }

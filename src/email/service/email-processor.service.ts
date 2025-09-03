@@ -5,6 +5,7 @@ import { PdfService } from './pdf.service';
 import { MailerService } from './mailer.service';
 import { EmailJob } from '../interface/email.interface';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { LogsService } from 'src/logs/logs.service';
 import axios from 'axios';
 
 @Injectable()
@@ -22,6 +23,7 @@ export class EmailProcessorService {
     private readonly pdfService: PdfService,
     private readonly mailer: MailerService,
     private readonly prisma: PrismaService,
+    private readonly logService: LogsService, // <--- LogsService injetado
   ) {
     this.SUPERVISOR_EMAIL = process.env.SUPERVISOR_EMAIL!;
     this.IA_ENDPOINT = process.env.IA_ENDPOINT!;
@@ -60,25 +62,36 @@ export class EmailProcessorService {
       await this.processEmailJob(job);
     } catch (error) {
       this.logger.error('Erro no processamento da fila de emails:', error);
+      await this.logService.createLog(null, 'EMAIL_QUEUE_ERROR', {
+        error: (error as Error).message,
+      });
     }
   }
 
   private async processEmailJob(job: EmailJob) {
     const startTime = Date.now();
     this.logger.log(`Iniciando processamento do job ${job.id}`);
+    await this.logService.createLog(null, 'EMAIL_JOB_START', {
+      jobId: job.id,
+      cliente: job.email.cliente?.nome || 'N/A',
+      emailUid: job.email.uid,
+    });
 
     try {
       const email = job.email;
-
       const jsonBase = this.prepareDataForIA(email);
 
       this.logger.log('=== EMAIL CAPTURADO ===');
       this.logger.debug(JSON.stringify(jsonBase, null, 2));
+      await this.logService.createLog(null, 'EMAIL_CAPTURED', {
+        emailData: jsonBase,
+      });
 
       const cotacao = await this.callIAWithRetry(jsonBase);
 
       this.logger.log('=== RESULTADO IA ===');
       this.logger.debug(JSON.stringify(cotacao, null, 2));
+      await this.logService.createLog(null, 'IA_RESULT', { result: cotacao });
 
       const saved = await this.prisma.quotationGenerated.create({
         data: {
@@ -88,19 +101,33 @@ export class EmailProcessorService {
       });
 
       this.logger.log(`Cotação salva no banco com id=${saved.id}`);
+      await this.logService.createLog(null, 'QUOTATION_SAVED', {
+        quotationId: saved.id,
+      });
 
       await this.generateAndSendResponse(cotacao, saved.id.toString());
 
       this.emailQueue.MarkAsProcessed(job.id);
-
       const processingTime = Date.now() - startTime;
+
       this.logger.log(
         `Fluxo concluído em ${processingTime}ms. ` +
           `Total: ${cotacao.total.toLocaleString()} Kz | ` +
           `Destino: ${cotacao.revisao ? this.SUPERVISOR_EMAIL : cotacao.email}`,
       );
+
+      await this.logService.createLog(null, 'EMAIL_JOB_COMPLETE', {
+        jobId: job.id,
+        processingTime,
+        total: cotacao.total,
+        revisao: cotacao.revisao,
+      });
     } catch (error) {
       this.logger.error(`Erro no processamento do job ${job.id}:`, error);
+      await this.logService.createLog(null, 'EMAIL_JOB_ERROR', {
+        jobId: job.id,
+        error: (error as Error).message,
+      });
 
       await this.notifyErrorToSupervisor(job, error as Error);
     }
@@ -155,6 +182,7 @@ Responda educadamente informando que precisa de mais detalhes sobre os produtos 
         await this.sleep(2000);
         return this.callIAWithRetry(dados, retryCount + 1);
       }
+
       this.logger.error(`Falha definitiva após ${this.MAX_RETRIES} tentativas`);
       return this.createFailureResponse(dados, error as Error);
     }
@@ -201,9 +229,7 @@ Responda educadamente informando que precisa de mais detalhes sobre os produtos 
   }
 
   private extractItems(conteudo: any): any[] {
-    if (conteudo.itens && Array.isArray(conteudo.itens)) {
-      return conteudo.itens;
-    }
+    if (conteudo.itens && Array.isArray(conteudo.itens)) return conteudo.itens;
 
     if (conteudo.produtos && Array.isArray(conteudo.produtos)) {
       return conteudo.produtos.map((p: any) => ({
@@ -242,9 +268,7 @@ Responda educadamente informando que precisa de mais detalhes sobre os produtos 
   }
 
   private shouldRequireRevision(iaRevision: boolean, total: number): boolean {
-    if (iaRevision === true) return true;
-    if (total > this.REVISION_THRESHOLD) return true;
-    return false;
+    return iaRevision === true || total > this.REVISION_THRESHOLD;
   }
 
   private createFailureResponse(dados: any, error: Error) {
@@ -293,6 +317,10 @@ Responda educadamente informando que precisa de mais detalhes sobre os produtos 
         assunto = `Pré-Fatura RCS #${numero}`;
       } catch (pdfError) {
         this.logger.error('Erro ao gerar PDF:', pdfError);
+        await this.logService.createLog(null, 'PDF_ERROR', {
+          quotationId: numero,
+          error: pdfError,
+        });
         assunto = `Cotação RCS #${numero} (PDF em processamento)`;
       }
     }
@@ -307,6 +335,11 @@ Responda educadamente informando que precisa de mais detalhes sobre os produtos 
       assunto,
       corpoTexto: corpoEmail,
       anexoPdfPath: pdfPath || undefined,
+    });
+
+    await this.logService.createLog(null, 'EMAIL_SENT', {
+      to: destinatario,
+      quotationId: numero,
     });
   }
 
@@ -332,8 +365,17 @@ Responda educadamente informando que precisa de mais detalhes sobre os produtos 
         assunto,
         corpoTexto: corpo,
       });
+
+      await this.logService.createLog(null, 'SUPERVISOR_NOTIFIED', {
+        jobId: job.id,
+        error: error.message,
+      });
     } catch (notificationError) {
       this.logger.error('Erro ao notificar supervisor:', notificationError);
+      await this.logService.createLog(null, 'SUPERVISOR_NOTIFICATION_ERROR', {
+        jobId: job.id,
+        error: notificationError,
+      });
     }
   }
 
@@ -361,9 +403,7 @@ Responda educadamente informando que precisa de mais detalhes sobre os produtos 
         }
 
         const valor = Number(valorStr);
-        if (!isNaN(valor) && valor > 0) {
-          return valor;
-        }
+        if (!isNaN(valor) && valor > 0) return valor;
       }
     }
 

@@ -8,6 +8,7 @@ import { MailerService } from '../service/mailer.service';
 import { EmailController } from '../controller/email.controller';
 import { QuotationService } from '../service/quotation.service';
 import { HttpModule } from '@nestjs/axios';
+import { LogsService } from 'src/logs/logs.service';
 
 @Module({
   imports: [ConfigModule, HttpModule],
@@ -19,6 +20,7 @@ import { HttpModule } from '@nestjs/axios';
     PdfService,
     MailerService,
     QuotationService,
+    LogsService,
   ],
   exports: [
     EmailService,
@@ -27,6 +29,7 @@ import { HttpModule } from '@nestjs/axios';
     PdfService,
     MailerService,
     QuotationService,
+    LogsService,
   ],
 })
 export class EmailModule {}
