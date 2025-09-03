@@ -35,6 +35,7 @@ export class PdfService {
       const logoBuffer = fs.readFileSync(logoPath);
       logoBase64 = `data:image/png;base64,${logoBuffer.toString('base64')}`;
     }
+
     const subtotal = data.itens.reduce(
       (acc, item) => acc + item.quantidade * item.precoUnit,
       0,
@@ -302,14 +303,13 @@ export class PdfService {
                   <div class="company-info">
                     <div class="company-name">RCS</div>
                     <div class="company-details">
-                      Rua da Tecnologia, 123<br/>
                       Luanda, Angola<br/>
                       Tel: +244 923 456 789<br/>
                       Email: geral@rcs.ao
                     </div>
                   </div>
                   <div class="logo-section">
-                    ${logoBase64 ? `<img src="${logoBase64}" alt="Logo" />` : 'RCS'}
+                    ${logoBase64 ? `<img src="${logoBase64}" alt="Logo RCS" />` : 'RCS'}
                   </div>
                 </header>
 
@@ -407,9 +407,10 @@ export class PdfService {
                     : `<div class="observacoes">
                         <h4>Termos e Condições</h4>
                         • Pagamento em 30 dias após aprovação da pré-fatura<br/>
-                        • Projeto inclui 3 meses de suporte técnico gratuito<br/>
-                        • Valores expressos em Kwanzas angolanos (AOA)<br/>
+                        • Projeto inclui suporte técnico conforme acordado<br/>
+                        • Valores expressos em Kwanzas(AOA)<br/>
                         • Proposta válida por 30 dias a partir da data de emissão<br/>
+                        • Início dos trabalhos mediante confirmação e acordo comercial
                       </div>`
                 }
 
@@ -427,78 +428,54 @@ export class PdfService {
       </html>
     `;
 
-    const browser = await puppeteer.launch({
-      headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox'],
-    });
+    let browser;
 
-    const page = await browser.newPage();
-    await page.setContent(html, { waitUntil: 'networkidle0' });
+    try {
+      browser = await puppeteer.launch({
+        headless: true,
+        args: [
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-accelerated-2d-canvas',
+          '--no-first-run',
+          '--no-zygote',
+          '--disable-gpu',
+          '--disable-web-security',
+        ],
+      });
 
-    await page.pdf({
-      path: filePath,
-      format: 'A4',
-      printBackground: true,
-      displayHeaderFooter: true,
-      headerTemplate: '<span></span>',
-      footerTemplate: `
-        <div style="font-size:10px; width:100%; text-align:center; color:#6c757d; margin-top: 10px;">
-          Página <span class="pageNumber"></span> de <span class="totalPages"></span>
-        </div>
-      `,
-      margin: {
-        top: '60px',
-        bottom: '80px',
-        left: '40px',
-        right: '40px',
-      },
-    });
+      const page = await browser.newPage();
+      await page.setContent(html, { waitUntil: 'networkidle0' });
 
-    await browser.close();
-
-    this.logger.log(`Pré-fatura profissional gerada: ${filePath}`);
-    return filePath;
-  }
-
-  async generateSamplePreInvoice(): Promise<string> {
-    const sampleData = {
-      numero: `PF-${new Date().getFullYear()}-${String(Date.now()).slice(-3)}`,
-      cliente: {
-        nome: 'Empresa XYZ Ltda',
-        email: 'financeiro@empresaxyz.ao',
-        nif: '5417685478',
-      },
-      itens: [
-        {
-          descricao: 'Consultoria em Tecnologia',
-          detalhes: 'Análise e otimização de sistemas',
-          quantidade: 10,
-          precoUnit: 15000,
+      await page.pdf({
+        path: filePath,
+        format: 'A4',
+        printBackground: true,
+        displayHeaderFooter: true,
+        headerTemplate: '<span></span>',
+        footerTemplate: `
+          <div style="font-size:10px; width:100%; text-align:center; color:#6c757d; margin-top: 10px;">
+            Página <span class="pageNumber"></span> de <span class="totalPages"></span>
+          </div>
+        `,
+        margin: {
+          top: '60px',
+          bottom: '80px',
+          left: '40px',
+          right: '40px',
         },
-        {
-          descricao: 'Desenvolvimento de Sistema',
-          detalhes: 'Sistema de gestão personalizado',
-          quantidade: 1,
-          precoUnit: 250000,
-        },
-        {
-          descricao: 'Manutenção Mensal',
-          detalhes: 'Suporte técnico e atualizações',
-          quantidade: 3,
-          precoUnit: 20000,
-        },
-        {
-          descricao: 'Hospedagem Cloud',
-          detalhes: 'Servidor dedicado e backup',
-          quantidade: 12,
-          precoUnit: 5000,
-        },
-      ],
-      total: 520000,
-      observacoes:
-        '• Pagamento em 30 dias após aprovação da pré-fatura<br/>• Projeto inclui 3 meses de suporte técnico gratuito<br/>• Valores expressos em Kwanzas angolanos (AOA)<br/>• Proposta válida por 30 dias a partir da data de emissão<br/>• Início dos trabalhos mediante confirmação e 50% de sinal',
-    };
+      });
 
-    return this.generatePreInvoice(sampleData);
+      this.logger.log(`Pré-fatura gerada com sucesso: ${filePath}`);
+      return filePath;
+    } catch (error) {
+      this.logger.error('Erro ao gerar PDF:', error);
+      throw new Error(`Falha na geração do PDF: ${error.message}`);
+    } finally {
+      if (browser) {
+        await browser.close();
+      }
+    }
   }
 }

@@ -189,7 +189,7 @@ export class EmailService {
     }
   }
 
-  @Cron('*/10 * * * * *')
+  @Cron('*/30 * * * * *')
   async handleCron() {
     this.logger.log('Verificando emails...');
     try {
