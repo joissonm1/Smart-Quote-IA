@@ -5,7 +5,7 @@ import { PdfService } from './pdf.service';
 import { MailerService } from './mailer.service';
 import { EmailJob } from '../interface/email.interface';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { LogsService } from 'src/logs/logs.service';
+import { LogsService } from 'src/log/logs.service';
 import axios from 'axios';
 
 @Injectable()

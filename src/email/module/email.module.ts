@@ -8,7 +8,7 @@ import { MailerService } from '../service/mailer.service';
 import { EmailController } from '../controller/email.controller';
 import { QuotationService } from '../service/quotation.service';
 import { HttpModule } from '@nestjs/axios';
-import { LogsService } from 'src/logs/logs.service';
+import { LogsService } from 'src/log/logs.service';
 
 @Module({
   imports: [ConfigModule, HttpModule],

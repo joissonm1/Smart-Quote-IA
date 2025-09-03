@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { PdfService } from '../email/service/pdf.service';
 import { MailerService } from '../email/service/mailer.service';
-import { LogsService } from '../logs/logs.service';
+import { LogsService } from '../log/logs.service';
 import axios from 'axios';
 
 @Injectable()
