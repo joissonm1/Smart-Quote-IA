@@ -29,11 +29,23 @@ export class PdfService {
 
     const filePath = path.join(uploadsDir, `pre-fatura-${data.numero}.pdf`);
 
-    const logoPath = path.join(__dirname, '../../assets/logo.png');
+    const possiblePaths: string[] = [
+      process.env.LOGO_PATH || '',
+      path.join(process.cwd(), 'dist/assets/logo.png'),
+      path.join(process.cwd(), 'src/assets/logo.png'),
+    ];
+
     let logoBase64 = '';
-    if (fs.existsSync(logoPath)) {
-      const logoBuffer = fs.readFileSync(logoPath);
-      logoBase64 = `data:image/png;base64,${logoBuffer.toString('base64')}`;
+    for (const p of possiblePaths) {
+      if (p && fs.existsSync(p)) {
+        const logoBuffer = fs.readFileSync(p);
+        logoBase64 = `data:image/png;base64,${logoBuffer.toString('base64')}`;
+        this.logger.log(`Logo carregada de: ${p}`);
+        break;
+      }
+    }
+    if (!logoBase64) {
+      this.logger.warn('⚠️ Nenhuma logo encontrada. PDF será gerado sem logo.');
     }
 
     const subtotal = data.itens.reduce(
