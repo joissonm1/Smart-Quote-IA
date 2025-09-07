@@ -8,16 +8,25 @@ datasource db {
 }
 
 model User {
-  id              String           @id @default(cuid())
-  email           String           @unique
-  password        String
-  createdAt       DateTime         @default(now())
-  name            String
-  updatedAt       DateTime         @updatedAt
-  role            Role
-  aiConversations AIConversation[]
-  logs            Log[]
-  quotations      Quotation[]
+  id                   String                @id @default(cuid())
+  email                String                @unique
+  password             String
+  createdAt            DateTime              @default(now())
+  name                 String
+  updatedAt            DateTime              @updatedAt
+  role                 Role
+  firstName            String?
+  lastName             String?
+  phone                String?
+  twoFactorEnabled     Boolean               @default(false)
+  aiConversations      AIConversation[]
+  AIProcessingConfig   AIProcessingConfig?
+  CompanySettings      CompanySettings?
+  LanguageSettings     LanguageSettings?
+  logs                 Log[]
+  NotificationSettings NotificationSettings?
+  quotations           Quotation[]
+  SystemSettings       SystemSettings?
 }
 
 model Supplier {
@@ -149,6 +158,55 @@ model QuotationGenerated {
   jsonData  Json
   createdAt DateTime? @default(now()) @db.Timestamp(6)
   status    String?   @default("PENDING")
+}
+
+model AIProcessingConfig {
+  id                  String @id
+  userId              String @unique
+  processingModel     String @default("gpt-4")
+  confidenceThreshold Int    @default(85)
+  autoProcessing      String @default("enabled")
+  User                User   @relation(fields: [userId], references: [id])
+}
+
+model CompanySettings {
+  id      String @id
+  userId  String @unique
+  name    String
+  email   String
+  address String
+  User    User   @relation(fields: [userId], references: [id])
+}
+
+model LanguageSettings {
+  id                String @id
+  userId            String @unique
+  interfaceLanguage String
+  currency          String
+  timezone          String
+  User              User   @relation(fields: [userId], references: [id])
+}
+
+model NotificationSettings {
+  id         String  @id
+  userId     String  @unique
+  email      Boolean
+  push       Boolean
+  approvals  Boolean
+  quotations Boolean
+  User       User    @relation(fields: [userId], references: [id])
+}
+
+model SystemSettings {
+  id                   String  @id
+  userId               String  @unique
+  autoApproveThreshold Float
+  emailNotifications   Boolean
+  approvalThreshold    Float
+  aiProcessingModel    String? @default("gpt-4")
+  autoProcessing       String? @default("enabled")
+  confidenceThreshold  Float?  @default(85.0)
+  User                 User    @relation(fields: [userId], references: [id])
 }
 
 enum RequestStatus {
