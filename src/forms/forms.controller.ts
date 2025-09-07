@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Get, UsePipes, Param, Query } from '@nestjs/common';
+import { Body, Controller, Post, Get, UsePipes, Param } from '@nestjs/common';
 import { FormsService } from './forms.service';
 import { ApiBody, ApiResponse, ApiTags, ApiOperation } from '@nestjs/swagger';
 import { ValidateForm } from '../forms/validate-form';
@@ -95,13 +95,5 @@ export class FormsController {
   @Get('quotations/:requestId')
   async getFormQuotation(@Param('requestId') requestId: string) {
     return this.quotationService.findByRequestId(requestId);
-  }
-
-  @Get()
-  async getAllFormSubmissions(
-    @Query('startDate') startDate?: string,
-    @Query('endDate') endDate?: string,
-  ) {
-    return this.formsService.getAllFormSubmissions(startDate, endDate);
   }
 }
