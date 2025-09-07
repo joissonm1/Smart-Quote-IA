@@ -327,9 +327,25 @@ export class FormsService {
     ].join('\n');
   }
 
-  async getAllFormSubmissions() {
+  // async getAllFormSubmissions() {
+  //   return this.prisma.quotationRequest.findMany({
+  //     include: { attachments: true },
+  //     orderBy: { createdAt: 'desc' },
+  //   });
+  // }
+
+  async getAllFormSubmissions(startDate?: string, endDate?: string) {
+    const where: any = {};
+    if (startDate && endDate) {
+      where.createdAt = {
+        gte: new Date(startDate),
+        lte: new Date(endDate),
+      };
+    }
+  
     return this.prisma.quotationRequest.findMany({
-      include: { attachments: true },
+      where,
+      include: { quotationGenerated: true },
       orderBy: { createdAt: 'desc' },
     });
   }
