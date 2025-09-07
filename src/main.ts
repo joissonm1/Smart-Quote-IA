@@ -10,6 +10,7 @@ async function bootstrap() {
     origin: ['https://smart-quote-front.vercel.app', 'http://localhost:3000'],
     methods: ['GET', 'POST', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true, // Se necessário para cookies ou autenticação
   });
 
   const config = new DocumentBuilder()
