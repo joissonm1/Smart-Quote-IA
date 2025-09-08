@@ -11,6 +11,7 @@ import { FormsModule } from './forms/forms.module';
 import { RolesGuard } from './login/auth/roles.guard';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { LogsModule } from './log/logs.module';
+import { SettingsModule } from './settings/settings.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { LogsModule } from './log/logs.module';
     FormsModule,
     DashboardModule,
     LogsModule,
+    SettingsModule,
   ],
   providers: [
     {

@@ -206,6 +206,8 @@ model SystemSettings {
   aiProcessingModel    String? @default("gpt-4")
   autoProcessing       String? @default("enabled")
   confidenceThreshold  Float?  @default(85.0)
+  revisionThreshold    Float?  @default(2000000)
+  supervisorEmail      String? @default("supervisorteste.rcs@gmail.com") @db.VarChar(255)
   User                 User    @relation(fields: [userId], references: [id])
 }
 
