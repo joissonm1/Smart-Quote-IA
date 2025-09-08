@@ -21,12 +21,27 @@ export class PdfService {
     observacoes?: string;
   }): Promise<string> {
     const uploadsDir = path.join(__dirname, '../../uploads/invoices');
-    if (fs.existsSync(uploadsDir)) {
-      fs.rmSync(uploadsDir, { recursive: true, force: true });
-      this.logger.log(`Pasta removida: ${uploadsDir}`);
+
+    if (!fs.existsSync(uploadsDir)) {
+      fs.mkdirSync(uploadsDir, { recursive: true });
+      this.logger.log(`Pasta criada: ${uploadsDir}`);
+    } else {
+      const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
+      const now = Date.now();
+
+      fs.readdirSync(uploadsDir).forEach((file) => {
+        const filePathOld = path.join(uploadsDir, file);
+        try {
+          const stats = fs.statSync(filePathOld);
+          if (now - stats.mtime.getTime() > SEVEN_DAYS) {
+            fs.unlinkSync(filePathOld);
+            this.logger.log(`🗑️ PDF antigo removido: ${filePathOld}`);
+          }
+        } catch (err) {
+          this.logger.warn(`Não foi possível verificar/apagar: ${filePathOld}`);
+        }
+      });
     }
-    fs.mkdirSync(uploadsDir, { recursive: true });
-    this.logger.log(`Pasta recriada: ${uploadsDir}`);
 
     const filePath = path.join(uploadsDir, `pre-fatura-${data.numero}.pdf`);
 

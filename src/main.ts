@@ -7,10 +7,14 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   app.enableCors({
-    origin: ['https://smart-quote-front.vercel.app', 'http://localhost:3000'],
+    origin: [
+      'https://smart-quote-front.vercel.app',
+      'http://localhost:3000',
+      'http://localhost:8080',
+    ],
     methods: ['GET', 'POST', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true, // Se necessário para cookies ou autenticação
+    credentials: true,
   });
 
   const config = new DocumentBuilder()
@@ -30,8 +34,6 @@ async function bootstrap() {
       transform: true,
     }),
   );
-
-  app.enableCors();
 
   await app.listen(process.env.PORT || 3001);
   console.log(

@@ -17,7 +17,7 @@ export class FormsService {
     private prisma: PrismaService,
     private pdfService: PdfService,
     private mailerService: MailerService,
-    private logService: LogsService, // <-- LogsService injetado
+    private logService: LogsService,
   ) {
     this.REVISION_THRESHOLD = parseInt(process.env.REVISION_THRESHOLD!);
   }
@@ -187,8 +187,14 @@ export class FormsService {
 
       const conteudo = data.conteudo || data;
 
+      // Ajuste: tratar também `conteudo.produtos`
       const itens =
         conteudo.itens ||
+        conteudo.produtos?.map((p: any) => ({
+          descricao: p.nome,
+          quantidade: p.quantidade,
+          precoUnit: p.preco_unitario,
+        })) ||
         (conteudo.produto
           ? [
               {
@@ -203,10 +209,18 @@ export class FormsService {
 
       const total =
         conteudo.total ||
+        conteudo.subtotal ||
+        conteudo.valor_final ||
         itens.reduce((acc, it) => acc + it.quantidade * it.precoUnit, 0);
 
       const precisaRevisao =
         data.revisao === true || total > this.REVISION_THRESHOLD;
+
+      const observacoesRaw =
+        conteudo.resposta_email?.corpo || conteudo.observacoes || '';
+      const observacoes = observacoesRaw
+        .replace(/\\n/g, '\n')
+        .replace(/\\/g, '');
 
       return {
         isvalide: true,
@@ -215,8 +229,7 @@ export class FormsService {
         itens,
         total,
         revisao: precisaRevisao,
-        observacoes:
-          conteudo.resposta_email?.corpo || conteudo.observacoes || '',
+        observacoes,
       };
     } catch (err) {
       this.logger.error(
@@ -278,9 +291,8 @@ export class FormsService {
       return [
         `Prezado(a) Supervisor,`,
         ``,
-        `A pré-fatura do cliente **${cotacao.cliente}** foi gerada via formulário e requer a sua revisão antes do envio.`,
+        `A pré-fatura do cliente ${cotacao.cliente} foi gerada via formulário e requer a sua revisão antes do envio.`,
         ``,
-        `Valor total: ${cotacao.total.toLocaleString()} Kzs`,
         `Número da pré-fatura: ${numero}`,
         ``,
         `O documento em anexo contém todos os detalhes.`,
@@ -302,10 +314,7 @@ export class FormsService {
     }
 
     const listaItens = cotacao.itens
-      .map(
-        (it) =>
-          `- ${it.descricao} — ${it.quantidade} un — ${it.precoUnit.toLocaleString()} Kz`,
-      )
+      .map((it) => `- ${it.descricao} — ${it.quantidade} un`)
       .join('\n');
 
     return [
@@ -315,8 +324,6 @@ export class FormsService {
       ``,
       `Itens incluídos:`,
       listaItens,
-      ``,
-      `Valor total: ${cotacao.total.toLocaleString()} Kz`,
       ``,
       `O documento em anexo contém todos os detalhes da sua pré-fatura.`,
       ``,

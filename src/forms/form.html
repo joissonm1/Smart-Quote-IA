@@ -1,750 +1,370 @@
 <!doctype html>
 <html lang="pt-BR">
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Formulário de Solicitação</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Solicitação - RCS</title>
     <style>
+      :root {
+        --primary-1: #2c5aa0;
+        --primary-2: #1a73e8;
+        --muted: #6c757d;
+        --bg: #f8f9fa;
+        --card: #ffffff;
+        --shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        --radius: 12px;
+      }
+
       * {
-        margin: 0;
-        padding: 0;
         box-sizing: border-box;
       }
-
-      :root {
-        --primary-blue: #2563eb;
-        --primary-blue-hover: #1d4ed8;
-        --bg-color: #f8fafc;
-        --card-bg: #ffffff;
-        --text-color: #1f2937;
-        --text-muted: #6b7280;
-        --border-color: #e5e7eb;
-        --input-bg: #ffffff;
-        --input-border: #d1d5db;
-        --input-focus: #2563eb;
-        --shadow:
-          0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-        --shadow-lg:
-          0 10px 15px -3px rgba(0, 0, 0, 0.1),
-          0 4px 6px -2px rgba(0, 0, 0, 0.05);
-      }
-
-      [data-theme='dark'] {
-        --bg-color: #0f172a;
-        --card-bg: #1e293b;
-        --text-color: #f1f5f9;
-        --text-muted: #94a3b8;
-        --border-color: #334155;
-        --input-bg: #334155;
-        --input-border: #475569;
-        --input-focus: #3b82f6;
-        --shadow:
-          0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px 0 rgba(0, 0, 0, 0.2);
-        --shadow-lg:
-          0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
-      }
-
       body {
-        font-family:
-          -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
-          'Helvetica Neue', sans-serif;
-        background-color: var(--bg-color);
-        color: var(--text-color);
-        min-height: 100vh;
-        transition: all 0.3s ease;
-      }
-
-      .container {
-        max-width: 600px;
-        margin: 0 auto;
-        padding: 2rem 1rem;
+        margin: 0;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: var(--bg);
+        color: #2c3e50;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
         min-height: 100vh;
         display: flex;
         align-items: center;
         justify-content: center;
+        padding: 28px;
       }
 
-      .theme-toggle {
-        position: fixed;
-        top: 1.5rem;
-        left: 1.5rem;
-        width: 40px;
-        height: 40px;
-        background: var(--card-bg);
-        border: 1px solid var(--border-color);
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        transition: all 0.2s ease;
+      .card {
+        width: 920px;
+        background: var(--card);
+        border-radius: var(--radius);
         box-shadow: var(--shadow);
+        overflow: hidden;
+        position: relative;
       }
 
-      .theme-toggle:hover {
-        transform: translateY(-1px);
-        box-shadow: var(--shadow-lg);
+      .watermark {
+        position: absolute;
+        left: 50%;
+        top: 30%;
+        transform: translate(-50%, -50%) rotate(-45deg);
+        font-size: 120px;
+        color: rgba(44, 90, 160, 0.03);
+        pointer-events: none;
+        z-index: 0;
+        font-weight: 900;
+        letter-spacing: 6px;
       }
 
-      .theme-toggle svg {
-        width: 18px;
-        height: 18px;
-        color: var(--text-muted);
+      .card-inner {
+        position: relative;
+        z-index: 1;
+        padding: 28px 36px;
       }
 
-      .form-card {
-        background: var(--card-bg);
-        border: 1px solid var(--border-color);
-        border-radius: 16px;
-        padding: 2rem;
-        box-shadow: var(--shadow-lg);
-        width: 100%;
-        max-width: 100%;
-      }
-
-      .form-header {
-        text-align: center;
-        margin-bottom: 2rem;
-      }
-
-      .logo-container {
-        margin-bottom: 1.5rem;
-      }
-
-      .logo {
-        max-width: 120px;
-        height: auto;
-        display: block;
-        margin: 0 auto;
-        filter: brightness(1);
-        transition: filter 0.3s ease;
-      }
-
-      [data-theme='dark'] .logo {
-        filter: brightness(1.2) contrast(1.1);
-      }
-
-      .form-header h1 {
-        font-size: 1.5rem;
-        font-weight: 600;
-        color: var(--primary-blue);
-        margin-bottom: 0.5rem;
-      }
-
-      .form-header p {
-        color: var(--text-muted);
-        font-size: 0.875rem;
-      }
-
-      .form-group {
-        margin-bottom: 1.5rem;
-      }
-
-      .form-label {
-        display: block;
-        font-size: 0.875rem;
-        font-weight: 500;
-        color: var(--text-color);
-        margin-bottom: 0.5rem;
-      }
-
-      .required {
-        color: #ef4444;
-      }
-
-      .form-input,
-      .form-textarea {
-        width: 100%;
-        padding: 0.75rem;
-        border: 1px solid var(--input-border);
-        border-radius: 8px;
-        font-size: 0.875rem;
-        background: var(--input-bg);
-        color: var(--text-color);
-        transition: all 0.2s ease;
-      }
-
-      .form-input:focus,
-      .form-textarea:focus {
-        outline: none;
-        border-color: var(--input-focus);
-        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-      }
-
-      .form-input::placeholder,
-      .form-textarea::placeholder {
-        color: var(--text-muted);
-      }
-
-      .form-textarea {
-        resize: vertical;
-        min-height: 100px;
-      }
-
-      .file-upload-area {
-        border: 2px dashed var(--input-border);
-        border-radius: 8px;
-        padding: 2rem;
-        text-align: center;
-        background: var(--input-bg);
-        transition: all 0.2s ease;
-        cursor: pointer;
-      }
-
-      .file-upload-area:hover {
-        border-color: var(--input-focus);
-        background: rgba(37, 99, 235, 0.02);
-      }
-
-      .file-upload-icon {
-        width: 32px;
-        height: 32px;
-        color: var(--primary-blue);
-        margin: 0 auto 0.75rem;
-      }
-
-      .file-upload-text {
-        color: var(--text-muted);
-        font-size: 0.875rem;
-        margin-bottom: 1rem;
-      }
-
-      .file-input {
-        display: none;
-      }
-
-      .select-button {
-        background: transparent;
-        border: 1px solid var(--primary-blue);
-        color: var(--primary-blue);
-        padding: 0.5rem 1rem;
-        border-radius: 6px;
-        font-size: 0.875rem;
-        cursor: pointer;
-        transition: all 0.2s ease;
-      }
-
-      .select-button:hover {
-        background: var(--primary-blue);
-        color: white;
-      }
-
-      .selected-files {
-        margin-top: 1rem;
-      }
-
-      .file-item {
+      header {
         display: flex;
-        align-items: center;
-        justify-content: between;
-        padding: 0.75rem;
-        background: rgba(37, 99, 235, 0.05);
-        border: 1px solid rgba(37, 99, 235, 0.2);
-        border-radius: 6px;
-        margin-top: 0.5rem;
-        font-size: 0.875rem;
+        justify-content: space-between;
+        align-items: flex-start;
+        border-bottom: 3px solid var(--primary-1);
+        padding-bottom: 18px;
+        margin-bottom: 18px;
       }
 
-      .file-item-name {
-        color: var(--text-color);
-        flex: 1;
+      .company .name {
+        color: var(--primary-1);
+        font-size: 28px;
+        font-weight: 700;
+        margin-bottom: 6px;
+      }
+      .company .details {
+        color: var(--muted);
+        font-size: 12px;
       }
 
-      .remove-file {
-        background: none;
-        border: none;
-        color: #ef4444;
-        cursor: pointer;
-        padding: 0.25rem;
-        border-radius: 4px;
-        margin-left: 0.5rem;
-      }
-
-      .remove-file:hover {
-        background: rgba(239, 68, 68, 0.1);
-      }
-
-      .submit-btn {
-        width: 100%;
-        background: var(--primary-blue);
-        color: white;
-        border: none;
-        padding: 0.875rem;
-        font-size: 0.875rem;
-        font-weight: 500;
-        border-radius: 8px;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        margin-top: 1rem;
+      .logo-block {
+        width: 84px;
+        height: 84px;
+        border-radius: 10px;
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 0.5rem;
+        background: linear-gradient(135deg, var(--primary-1), var(--primary-2));
+        color: white;
+        font-weight: 700;
+        font-size: 20px;
+        overflow: hidden;
+      }
+      .logo-block img {
+        width: 76px;
+        height: 76px;
+        object-fit: contain;
+        display: block;
       }
 
-      .submit-btn:hover {
-        background: var(--primary-blue-hover);
+      .title {
+        background: linear-gradient(135deg, var(--primary-1), var(--primary-2));
+        color: white;
+        padding: 10px 14px;
+        text-align: center;
+        font-size: 16px;
+        font-weight: 600;
+        border-radius: 8px;
+        margin-bottom: 18px;
+        display: inline-block;
       }
 
-      .submit-btn:disabled {
+      form {
+        display: grid;
+        gap: 14px;
+      }
+      .grid-2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+      }
+      label {
+        font-size: 13px;
+        font-weight: 600;
+        display: block;
+        margin-bottom: 6px;
+      }
+      input[type='text'],
+      input[type='email'],
+      textarea {
+        width: 100%;
+        padding: 10px 12px;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        background: white;
+        font-size: 14px;
+      }
+      textarea {
+        min-height: 110px;
+        resize: vertical;
+      }
+
+      .file-area {
+        border: 2px dashed #e2e8f0;
+        padding: 14px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: #fff;
+        cursor: pointer;
+      }
+      .file-area .info {
+        color: var(--muted);
+        font-size: 13px;
+      }
+      .file-area .btn {
+        border: 1px solid var(--primary-1);
+        background: transparent;
+        color: var(--primary-1);
+        padding: 8px 10px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 13px;
+      }
+      .selected-files {
+        margin-top: 8px;
+        font-size: 13px;
+        color: var(--muted);
+      }
+
+      .actions {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        margin-top: 6px;
+      }
+      .submit {
+        background: linear-gradient(135deg, var(--primary-1), var(--primary-2));
+        color: white;
+        padding: 10px 16px;
+        border-radius: 10px;
+        border: none;
+        cursor: pointer;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .submit[disabled] {
         opacity: 0.6;
         cursor: not-allowed;
       }
 
-      .loading-spinner {
-        width: 16px;
-        height: 16px;
-        border: 2px solid transparent;
-        border-top: 2px solid white;
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-      }
-
-      @keyframes spin {
-        to {
-          transform: rotate(360deg);
-        }
-      }
-
       .message {
-        padding: 0.75rem;
+        padding: 10px 12px;
         border-radius: 8px;
-        margin-top: 1rem;
-        font-size: 0.875rem;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        opacity: 1;
-        transform: translateY(0);
-        transition: all 0.3s ease;
+        margin-top: 8px;
+        font-size: 13px;
+      }
+      .ok {
+        background: #e6ffed;
+        color: #05532a;
+        border: 1px solid #c7f0d0;
+      }
+      .err {
+        background: #fff0f0;
+        color: #6b0b0b;
+        border: 1px solid #ffd1d1;
       }
 
-      .message.fade-out {
-        opacity: 0;
-        transform: translateY(-10px);
-      }
-
-      .success {
-        background: #dcfce7;
-        color: #166534;
-        border: 1px solid #bbf7d0;
-      }
-
-      .error {
-        background: #fee2e2;
-        color: #991b1b;
-        border: 1px solid #fecaca;
-      }
-
-      .hidden {
-        display: none;
-      }
-
-      @media (max-width: 640px) {
-        .container {
-          padding: 1rem 0.5rem;
-        }
-
-        .form-card {
-          padding: 1.5rem;
-        }
-
-        .theme-toggle {
-          top: 1rem;
-          left: 1rem;
-        }
-
-        .logo {
-          max-width: 100px;
-        }
+      footer {
+        margin-top: 18px;
+        font-size: 12px;
+        color: var(--muted);
+        text-align: center;
       }
     </style>
   </head>
   <body>
-    <button
-      class="theme-toggle"
-      onclick="toggleTheme()"
-      aria-label="Toggle theme"
-    >
-      <svg
-        class="sun-icon"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
-        ></path>
-      </svg>
-      <svg
-        class="moon-icon hidden"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
-        ></path>
-      </svg>
-    </button>
-
-    <div class="container">
-      <div class="form-card">
-        <div class="form-header">
-          <div class="logo-container">
-            <img
-              src="../assets/logo.png"
-              alt="RCS Logo"
-              class="logo"
-              onerror="this.style.display='none'"
-            />
+    <div class="card">
+      <div class="watermark">PRÉ-FATURA</div>
+      <div class="card-inner">
+        <header>
+          <div class="company">
+            <div class="name">RCS</div>
+            <div class="details">
+              Luanda, Angola<br />Call Center: +244 932 896 190
+            </div>
           </div>
-          <h1>Formulário de Solicitação</h1>
-          <p>Preencha os campos abaixo para enviar sua solicitação</p>
+          <div class="logo-block" id="logoBlock"><span>RCS</span></div>
+        </header>
+
+        <div
+          style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+          "
+        >
+          <div class="title">Solicite a sua pré-fatura</div>
+          <div style="color: var(--muted); font-size: 13px">
+            Rápido • Fácil • Seguro
+          </div>
         </div>
 
         <form id="requestForm">
-          <div class="form-group">
-            <label for="requester" class="form-label">
-              Nome do Solicitante <span class="required">*</span>
-            </label>
-            <input
-              type="text"
-              id="requester"
-              name="requester"
-              class="form-input"
-              required
-              placeholder="Digite seu nome completo"
-            />
+          <div class="grid-2">
+            <div>
+              <label for="requester">Nome do solicitante *</label>
+              <input id="requester" type="text" required />
+            </div>
+            <div>
+              <label for="email">E-mail *</label>
+              <input id="email" type="email" required />
+            </div>
           </div>
-
-          <div class="form-group">
-            <label for="email" class="form-label">
-              E-mail <span class="required">*</span>
-            </label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              class="form-input"
-              required
-              placeholder="seu.email@exemplo.com"
-            />
+          <div>
+            <label for="description">Descrição da solicitação *</label>
+            <textarea id="description" required></textarea>
           </div>
-
-          <div class="form-group">
-            <label for="description" class="form-label">
-              Descrição da Solicitação <span class="required">*</span>
-            </label>
-            <textarea
-              id="description"
-              name="description"
-              class="form-textarea"
-              required
-              placeholder="Descreva detalhadamente sua solicitação..."
-            ></textarea>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label"
-              >Anexos
-              <span style="color: var(--text-muted); font-weight: normal"
-                >(opcional)</span
-              ></label
-            >
-            <div
-              class="file-upload-area"
-              onclick="document.getElementById('attachments').click()"
-            >
-              <svg
-                class="file-upload-icon"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                ></path>
-              </svg>
-              <div class="file-upload-text">
-                Clique para selecionar arquivos ou arraste-os aqui
+          <div>
+            <label>Anexos (opcional)</label>
+            <div class="file-area">
+              <div style="flex: 1">
+                <div class="info">
+                  Clique para selecionar ou arraste arquivos aqui (pdf, jpg,
+                  png, doc)
+                </div>
+                <div id="selectedFiles" class="selected-files"></div>
               </div>
-              <button type="button" class="select-button">
-                Selecionar Arquivos
+              <button type="button" class="btn" id="chooseBtn">
+                Selecionar
               </button>
               <input
-                type="file"
                 id="attachments"
-                name="attachments"
-                class="file-input"
+                type="file"
                 multiple
-                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                style="display: none"
               />
             </div>
-            <div id="selectedFiles" class="selected-files"></div>
           </div>
-
-          <button type="submit" class="submit-btn" id="submitBtn">
-            <span class="btn-text">Enviar Solicitação</span>
-            <div class="loading-spinner hidden"></div>
-          </button>
-
-          <div id="message"></div>
+          <div class="actions">
+            <button type="submit" class="submit" id="submitBtn">
+              Enviar solicitação
+            </button>
+            <div id="resultMessage" style="flex: 1"></div>
+          </div>
+          <footer>
+            Ao submeter, o nosso sistema irá gerar uma pré-fatura automática com
+            base na solicitação.
+          </footer>
         </form>
       </div>
     </div>
 
     <script>
-      let messageTimeout = null;
+      const FORM_ENDPOINT = 'https://smart-quote-ia-1.onrender.com/forms';
 
-      function showMessage(content, isSuccess = true) {
-        const messageDiv = document.getElementById('message');
+      const attachmentsInput = document.getElementById('attachments');
+      const chooseBtn = document.getElementById('chooseBtn');
+      const selectedFilesDiv = document.getElementById('selectedFiles');
+      const form = document.getElementById('requestForm');
+      const resultMessage = document.getElementById('resultMessage');
+      const submitBtn = document.getElementById('submitBtn');
 
-        if (messageTimeout) {
-          clearTimeout(messageTimeout);
+      chooseBtn.addEventListener('click', () => attachmentsInput.click());
+      attachmentsInput.addEventListener('change', (e) => {
+        const files = Array.from(e.target.files || []);
+        selectedFilesDiv.innerHTML = files.map((f) => f.name).join(', ');
+      });
+
+      form.addEventListener('submit', async (ev) => {
+        ev.preventDefault();
+        const requester = document.getElementById('requester').value.trim();
+        const email = document.getElementById('email').value.trim();
+        const description = document.getElementById('description').value.trim();
+        if (!requester || !email || !description) {
+          showMessage('Preencha todos os campos obrigatórios.', 'err');
+          return;
         }
-        messageDiv.innerHTML = content;
 
-        messageTimeout = setTimeout(() => {
-          const messageElement = messageDiv.querySelector('.message');
-          if (messageElement) {
-            messageElement.classList.add('fade-out');
+        submitBtn.disabled = true;
+        showMessage('Enviando solicitação...', 'ok');
 
-            setTimeout(() => {
-              messageDiv.innerHTML = '';
-            }, 300);
+        try {
+          const files = Array.from(attachmentsInput.files || []);
+          const attachments = files.map((f) => ({
+            fileName: f.name,
+            fileUrl: 'local://' + f.name, //
+            fileType: f.type,
+          }));
+
+          const payload = { requester, email, description, attachments };
+
+          const response = await fetch(FORM_ENDPOINT, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+
+          if (!response.ok) {
+            throw new Error('Erro ' + response.status);
           }
-        }, 2000);
-      }
 
-      function toggleTheme() {
-        const currentTheme =
-          document.documentElement.getAttribute('data-theme');
-        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-        document.documentElement.setAttribute('data-theme', newTheme);
-
-        const sunIcon = document.querySelector('.sun-icon');
-        const moonIcon = document.querySelector('.moon-icon');
-
-        if (newTheme === 'dark') {
-          sunIcon.classList.add('hidden');
-          moonIcon.classList.remove('hidden');
-        } else {
-          sunIcon.classList.remove('hidden');
-          moonIcon.classList.add('hidden');
+          showMessage('Solicitação enviada com sucesso!', 'ok');
+          form.reset();
+          selectedFilesDiv.innerHTML = '';
+        } catch (err) {
+          console.error(err);
+          showMessage('Erro ao enviar solicitação.', 'err');
+        } finally {
+          submitBtn.disabled = false;
         }
-      }
-
-      const savedTheme = 'light'; // Default to light theme
-      document.documentElement.setAttribute('data-theme', savedTheme);
-
-      if (savedTheme === 'dark') {
-        document.querySelector('.sun-icon').classList.add('hidden');
-        document.querySelector('.moon-icon').classList.remove('hidden');
-      }
-
-      // File selection display
-      document
-        .getElementById('attachments')
-        .addEventListener('change', function (e) {
-          const filesContainer = document.getElementById('selectedFiles');
-          const files = Array.from(e.target.files);
-
-          if (files.length > 0) {
-            filesContainer.innerHTML = files
-              .map(
-                (file, index) => `
-                          <div class="file-item">
-                              <span class="file-item-name">${file.name}</span>
-                              <button type="button" class="remove-file" onclick="removeFile(${index})">
-                                  <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
-                                      <path d="M18 6L6 18M6 6l12 12"/>
-                                  </svg>
-                              </button>
-                          </div>
-                      `,
-              )
-              .join('');
-          } else {
-            filesContainer.innerHTML = '';
-          }
-        });
-
-      // Remove file function
-      function removeFile(index) {
-        const fileInput = document.getElementById('attachments');
-        const files = Array.from(fileInput.files);
-        files.splice(index, 1);
-
-        // Create new FileList
-        const dt = new DataTransfer();
-        files.forEach((file) => dt.items.add(file));
-        fileInput.files = dt.files;
-
-        // Trigger change event
-        fileInput.dispatchEvent(new Event('change'));
-      }
-
-      // Form submission
-      document
-        .getElementById('requestForm')
-        .addEventListener('submit', async function (e) {
-          e.preventDefault();
-
-          const submitBtn = document.getElementById('submitBtn');
-          const btnText = submitBtn.querySelector('.btn-text');
-          const spinner = submitBtn.querySelector('.loading-spinner');
-
-          // Clear any existing messages
-          document.getElementById('message').innerHTML = '';
-          if (messageTimeout) {
-            clearTimeout(messageTimeout);
-          }
-
-          // Show loading state
-          submitBtn.disabled = true;
-          btnText.textContent = 'Enviando...';
-          spinner.classList.remove('hidden');
-
-          try {
-            // Get files for FormData
-            const files = document.getElementById('attachments').files;
-
-            let response;
-
-            if (files.length > 0) {
-              // If has files, use FormData
-              const formData = new FormData();
-              formData.append(
-                'requester',
-                document.getElementById('requester').value,
-              );
-              formData.append('email', document.getElementById('email').value);
-              formData.append(
-                'description',
-                document.getElementById('description').value,
-              );
-
-              for (let i = 0; i < files.length; i++) {
-                formData.append('attachments', files[i]);
-              }
-
-              response = await fetch(
-                'https://smart-quote-ia-1.onrender.com/forms',
-                {
-                  method: 'POST',
-                  body: formData,
-                },
-              );
-            } else {
-              const jsonData = {
-                requester: document.getElementById('requester').value,
-                email: document.getElementById('email').value,
-                description: document.getElementById('description').value,
-                attachments: [],
-              };
-
-              response = await fetch(
-                'https://smart-quote-ia-1.onrender.com/forms',
-                {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                  },
-                  body: JSON.stringify(jsonData),
-                },
-              );
-            }
-
-            if (response.ok) {
-              showMessage(
-                `
-                      <div class="message success">
-                          <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
-                              <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                          </svg>
-                          Solicitação enviada com sucesso!
-                      </div>
-                    `,
-                true,
-              );
-
-              document.getElementById('requestForm').reset();
-              document.getElementById('selectedFiles').innerHTML = '';
-            } else {
-              throw new Error('Erro ao enviar formulário');
-            }
-          } catch (error) {
-            showMessage(
-              `
-                    <div class="message error">
-                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                        </svg>
-                        Erro ao enviar solicitação. Tente novamente.
-                    </div>
-                  `,
-              false,
-            );
-
-            console.error('Error:', error);
-          } finally {
-            // Reset button state
-            submitBtn.disabled = false;
-            btnText.textContent = 'Enviar Solicitação';
-            spinner.classList.add('hidden');
-          }
-        });
-
-      // Prevent default drag behaviors
-      ['dragenter', 'dragover', 'dragleave', 'drop'].forEach((eventName) => {
-        document.addEventListener(eventName, preventDefaults, false);
       });
 
-      function preventDefaults(e) {
-        e.preventDefault();
-        e.stopPropagation();
-      }
-
-      // Highlight drop area when item is dragged over it
-      const dropArea = document.querySelector('.file-upload-area');
-      ['dragenter', 'dragover'].forEach((eventName) => {
-        dropArea.addEventListener(eventName, highlight, false);
-      });
-
-      ['dragleave', 'drop'].forEach((eventName) => {
-        dropArea.addEventListener(eventName, unhighlight, false);
-      });
-
-      function highlight(e) {
-        dropArea.style.borderColor = 'var(--input-focus)';
-        dropArea.style.background = 'rgba(37, 99, 235, 0.05)';
-      }
-
-      function unhighlight(e) {
-        dropArea.style.borderColor = 'var(--input-border)';
-        dropArea.style.background = 'var(--input-bg)';
-      }
-
-      // Handle dropped files
-      dropArea.addEventListener('drop', handleDrop, false);
-
-      function handleDrop(e) {
-        const dt = e.dataTransfer;
-        const files = dt.files;
-        document.getElementById('attachments').files = files;
-        document
-          .getElementById('attachments')
-          .dispatchEvent(new Event('change'));
+      function showMessage(msg, type) {
+        resultMessage.innerHTML =
+          '<div class="message ' +
+          (type === 'ok' ? 'ok' : 'err') +
+          '">' +
+          msg +
+          '</div>';
       }
     </script>
   </body>

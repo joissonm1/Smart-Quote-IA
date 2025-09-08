@@ -23,7 +23,7 @@ export class EmailProcessorService {
     private readonly pdfService: PdfService,
     private readonly mailer: MailerService,
     private readonly prisma: PrismaService,
-    private readonly logService: LogsService, // <--- LogsService injetado
+    private readonly logService: LogsService,
   ) {
     this.SUPERVISOR_EMAIL = process.env.SUPERVISOR_EMAIL!;
     this.IA_ENDPOINT = process.env.IA_ENDPOINT!;
@@ -419,9 +419,8 @@ Responda educadamente informando que precisa de mais detalhes sobre os produtos 
       return [
         `Prezado(a) Supervisor,`,
         ``,
-        `A solicitação do cliente **${cotacao.cliente}** foi processada e requer sua revisão.`,
+        `A solicitação do cliente ${cotacao.cliente} foi processada e requer sua revisão.`,
         ``,
-        `${cotacao.total > 0 ? `Valor total: ${cotacao.total.toLocaleString()} Kz` : 'Solicitação sem valor definido'}`,
         `Referência: ${numero}`,
         `Email do cliente: ${cotacao.email}`,
         ``,
@@ -454,10 +453,7 @@ Responda educadamente informando que precisa de mais detalhes sobre os produtos 
     }
 
     const listaItens = cotacao.itens
-      .map(
-        (item) =>
-          `• ${item.descricao} — ${item.quantidade} un — ${item.precoUnit.toLocaleString()} Kz`,
-      )
+      .map((item) => `• ${item.descricao} — ${item.quantidade} un`)
       .join('\n');
 
     return [
@@ -465,7 +461,7 @@ Responda educadamente informando que precisa de mais detalhes sobre os produtos 
       ``,
       `Agradecemos sua solicitação. Preparamos a pré-fatura #${numero} com base nas informações fornecidas.`,
       ``,
-      `**Itens cotados:**`,
+      `Itens cotados:`,
       listaItens,
       ``,
       `O documento em anexo contém todos os detalhes da cotação.`,
